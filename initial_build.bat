@@ -50,6 +50,10 @@ if %errorlevel% neq 0 (
 echo [OK] SWE-agent installation complete.
 echo.
 
+git config core.autocrlf false
+git rm --cached -r .
+git reset --hard
+
 :: --- Step 6: Cleanup ---
 call venv\Scripts\deactivate
 cd ..
