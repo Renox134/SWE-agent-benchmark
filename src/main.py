@@ -48,12 +48,12 @@ def run_agent(command: str, flags):
 
 if __name__ == "__main__":
     set_env_keys()
-    test_agent()
+    # test_agent()
 
     flags = (
-        "--agent.model.name=claude-sonnet-4-20250514 "
+        "--agent.model.name=gpt-4o "
         "--agent.model.per_instance_cost_limit=2.00 "
         "--env.repo.github_url=https://github.com/SWE-agent/test-repo "
         "--problem_statement.github_url=https://github.com/SWE-agent/test-repo/issues/1"
     )
-    # run_agent("run", flags)
+    run_agent("run", flags)
