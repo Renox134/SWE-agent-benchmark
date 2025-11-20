@@ -1,0 +1,21 @@
+diff --git a/astropy/modeling/separable.py b/astropy/modeling/separable.py
+index e180603eac..4919d49022 100644
+--- a/astropy/modeling/separable.py
++++ b/astropy/modeling/separable.py
+@@ -303,9 +303,15 @@ def _separable(transform):
+     ) is not NotImplemented:
+         return transform_matrix
+     elif isinstance(transform, CompoundModel):
++        # Recursively compute separability for left and right components
+         sepleft = _separable(transform.left)
+         sepright = _separable(transform.right)
+-        return _operators[transform.op](sepleft, sepright)
++        # Combine the separability matrices using the operator
++        combined_separability = _operators[transform.op](sepleft, sepright)
++        # If the compound model is nested, ensure the combined separability is correct
++        if isinstance(transform.left, CompoundModel) or isinstance(transform.right, CompoundModel):
++            combined_separability = _separable(CompoundModel(transform.left, transform.right, op=transform.op))
++        return combined_separability
+     elif isinstance(transform, Model):
+         return _coord_matrix(transform, "left", transform.n_outputs)
+ 

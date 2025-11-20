@@ -1,0 +1,8 @@
+[project]
+name = "SWE Wrapper"
+version = "0.0.1"
+
+[tool.pytest.ini.options]
+adopts = [
+    "--import-mode=importlib"
+]

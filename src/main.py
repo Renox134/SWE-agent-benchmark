@@ -1,58 +1,45 @@
 import subprocess
-import os
-import shlex
+import sys
+from datasets import load_dataset
 from pathlib import Path
 
+dataset_url: str = "SWE-bench/SWE-bench_Verified"
+agent_model: str = "openrouter/openai/gpt-4o"
 
-def create_env_file():
-    """
-    Sets the api keys to the values specified in the internal dictionary
-    """
-    api_key_dict = {
-        "OPENROUTER_API_KEY": "<your key>",
-        "LITELLM_API_BASE": "https://openrouter.ai/api/v1"
-    }
-    if not os.path.exists("agent/.env"):
-        with open("agent/.env", "w") as file:
-            for key, val in api_key_dict.items():
-                file.write(key + "=" + val + "\n")
-            file.close()
+def main() -> None:
 
-def get_venv_python():
-    """
-    Find the python venv directory
-    """
-    venv_dir = Path("agent/venv")
-    if os.name == "nt":
-        return venv_dir / "Scripts" / "python.exe"
-    else:
-        return venv_dir / "bin" / "python"
+    dataset = load_dataset(dataset_url, split="test")
 
+    tasks_base = Path(f"tasks/{agent_model.replace('/', '_')}")
+    tasks_base.mkdir(exist_ok=True)
 
-def test_agent():
-    venv_python = get_venv_python()
-    subprocess.run([str(venv_python), "-m", "sweagent", "--help"], cwd="agent")
+    for idx, task in enumerate(dataset):
+        repo = f"https://github.com/{task['repo']}"
+        problem_text = task["problem_statement"]
 
+        task_folder = tasks_base / f"task{idx}"
+        task_folder.mkdir(exist_ok=True)
 
-def run_agent(command: str, flags):
-    venv_python = get_venv_python()
+        cmd = [
+            "sweagent", "run",
+            f"--agent.model.name={agent_model}",
+            "--agent.model.per_instance_cost_limit=2.00",
+            f"--env.repo.github_url={repo}",
+            f"--problem_statement.text={problem_text}",
+            f"--output_dir={str(task_folder)}"
+        ]
+ 
+        subprocess.run(cmd)
 
-    flag_list = shlex.split(flags)
+        cmd = [
+            sys.executable, "-m", "swebench.harness.run_evaluation",
+            f"--dataset_name={dataset_url}",
+            f"--predictions_path={str(task_folder)}",
+            "--max_workers=1",
+            f"--run_id=task{idx}"
+        ]
 
-    subprocess.run(
-        [str(venv_python), "-m", "sweagent", command, *flag_list],
-        cwd="agent",
-        check=True
-    )
-
+        subprocess.run(cmd)
 
 if __name__ == "__main__":
-    create_env_file()
-
-    flags = (
-        "--agent.model.name=openrouter/openai/gpt-4o "
-        "--agent.model.per_instance_cost_limit=2.00 "
-        "--env.repo.github_url=https://github.com/SWE-agent/test-repo "
-        "--problem_statement.github_url=https://github.com/SWE-agent/test-repo/issues/1"
-    )
-    run_agent("run", flags)
+    main()

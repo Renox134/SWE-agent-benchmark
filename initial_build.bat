@@ -50,15 +50,20 @@ if %errorlevel% neq 0 (
 echo [OK] SWE-agent installation complete.
 echo.
 
-git config core.autocrlf false
-git rm --cached -r .
-git reset --hard
+:: git config core.autocrlf false
+:: git rm --cached -r .
+:: git reset --hard
 
 :: --- Step 6: Cleanup ---
 call venv\Scripts\deactivate
 cd ..
 echo [6/6] Build environment deactivated.
 echo.
+
+python -m venv venv
+call venv\Scripts\activate
+pip install -r requirements.txt
+call venv\Scripts\deactivate
 
 echo ==================================================
 echo ===           BUILD COMPLETED SUCCESSFULLY      ===
