@@ -4,19 +4,19 @@ import shlex
 from pathlib import Path
 
 
-def set_env_keys():
+def create_env_file():
     """
     Sets the api keys to the values specified in the internal dictionary
     """
     api_key_dict = {
-        "ANTHROPIC_API_KEY": "<your key>",
-        "OPENAI_API_KEY": "<your key>"
+        "OPENROUTER_API_KEY": "<your key>",
+        "LITELLM_API_BASE": "https://openrouter.ai/api/v1"
     }
-    with open("agent/.env", "w") as file:
-        for key, val in api_key_dict.items():
-            file.write(key + "=" + val + "\n")
-        file.close()
-
+    if not os.path.exists("agent/.env"):
+        with open("agent/.env", "w") as file:
+            for key, val in api_key_dict.items():
+                file.write(key + "=" + val + "\n")
+            file.close()
 
 def get_venv_python():
     """
@@ -42,13 +42,12 @@ def run_agent(command: str, flags):
     subprocess.run(
         [str(venv_python), "-m", "sweagent", command, *flag_list],
         cwd="agent",
-        check=True  # raise an error if sweagent fails
+        check=True
     )
 
 
 if __name__ == "__main__":
-    # set_env_keys()
-    # test_agent()
+    create_env_file()
 
     flags = (
         "--agent.model.name=openrouter/openai/gpt-4o "
