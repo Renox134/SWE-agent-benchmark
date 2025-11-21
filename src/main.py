@@ -58,7 +58,7 @@ def run_agent_single() -> None:
         # modify patch for swebench
         patch_path = __has_patch(task_folder)
         if patch_path is not None:
-            with open(patch_path, "r") as f:
+            with open(patch_path, "r", newline="\n") as f:
                 patch_content = f.read()
 
                 patch_dict = {
@@ -70,7 +70,7 @@ def run_agent_single() -> None:
                 patches.append(patch_dict)
 
     # dump patches into a jsonl file
-    with open(pred_dir, "w") as o:
+    with open(pred_dir, "w", newline="\n") as o:
         for patch in patches:
             o.write(json.dumps(patch) + "\n")
 
@@ -82,14 +82,14 @@ def run_agent_batch() -> None:
         "--instances.type=swe_bench",
         "--instances.subset=verified",
         "--instances.split=test",
-        "--instances.slice=2:7",
+        "--instances.slice=:10",
         "--agent.model.per_instance_cost_limit=2.00",
         f"--output_dir={str(tasks_base)}",
         f"--num_workers={num_workers}"
     ]
     subprocess.run(cmd)
 
-    with open(str(tasks_base) + "/preds.json", "r") as f, open(pred_dir, "a") as o:
+    with open(str(tasks_base) + "/preds.json", "r", newline="\n") as f, open(pred_dir, "a", newline="\n") as o:
         preds = json.load(f)
 
         for key, value in preds.items():
