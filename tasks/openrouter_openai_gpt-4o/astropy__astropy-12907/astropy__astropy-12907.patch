@@ -1,0 +1,39 @@
+diff --git a/astropy/modeling/separable.py b/astropy/modeling/separable.py
+index a308e2729..9324b74bd 100644
+--- a/astropy/modeling/separable.py
++++ b/astropy/modeling/separable.py
+@@ -242,7 +242,13 @@ def _cstack(left, right):
+         cright = _coord_matrix(right, 'right', noutp)
+     else:
+         cright = np.zeros((noutp, right.shape[1]))
+-        cright[-right.shape[0]:, -right.shape[1]:] = 1
++        cright[-right.shape[0]:, -right.shape[1]:] = right
++
++    # Ensure matrices are aligned correctly
++    if cleft.shape[0] != cright.shape[0]:
++        raise ModelDefinitionError(
++            f"Incompatible shapes for stacking: {cleft.shape} and {cright.shape}"
++        )
+ 
+     return np.hstack([cleft, cright])
+ 
+@@ -304,9 +310,16 @@ def _separable(transform):
+     if (transform_matrix := transform._calculate_separability_matrix()) is not NotImplemented:
+         return transform_matrix
+     elif isinstance(transform, CompoundModel):
+-        sepleft = _separable(transform.left)
+-        sepright = _separable(transform.right)
+-        return _operators[transform.op](sepleft, sepright)
++        # Handle nested compound models by recursively computing separability
++        left_separable = _separable(transform.left)
++        right_separable = _separable(transform.right)
++        combined_separable = _operators[transform.op](left_separable, right_separable)
++        # Ensure the combined separability matrix is correctly shaped
++        if combined_separable.shape != (transform.n_outputs, transform.n_inputs):
++            raise ModelDefinitionError(
++                f"Incorrect separability matrix shape for nested model: {combined_separable.shape}"
++            )
++        return combined_separable
+     elif isinstance(transform, Model):
+         return _coord_matrix(transform, 'left', transform.n_outputs)
+ 

@@ -6,16 +6,31 @@ import os
 from datasets import load_dataset
 from pathlib import Path
 
+num_workers = 5
+
 dataset_url: str = "SWE-bench/SWE-bench_Verified"
 agent_model: str = "openrouter/openai/gpt-4o"
+tasks_base = Path(f"tasks/{agent_model.replace('/', '_')}")
+tasks_base.mkdir(parents=True, exist_ok=True)
+pred_dir = str(tasks_base) + f"/predictions_{dataset_url.replace('/', '_')}.jsonl"
 
 def main() -> None:
+    run_agent_batch()
+    run_bench()
+
+def run_agent_single() -> None:
+
+    def __has_patch(task_folder) -> str | None:
+        folders = os.listdir(str(task_folder))
+        if len(folders) > 0:
+            skip = os.listdir(str(task_folder))[0]
+            patch_path = str(task_folder) + f"/{skip}/{skip}.patch"
+
+            if os.path.exists(patch_path):
+                return patch_path
+        return None
 
     dataset = load_dataset(dataset_url, split="test")
-
-    tasks_base = Path(f"tasks/{agent_model.replace('/', '_')}")
-    tasks_base.mkdir(parents=True, exist_ok=True)
-
     patches = []
 
     for idx, task in enumerate(dataset):
@@ -55,17 +70,41 @@ def main() -> None:
                 patches.append(patch_dict)
 
     # dump patches into a jsonl file
-    pred_dir = str(tasks_base) + f"/predictions_{dataset_url.replace('/', '_')}.jsonl"
     with open(pred_dir, "w") as o:
         for patch in patches:
             o.write(json.dumps(patch) + "\n")
 
+def run_agent_batch() -> None:
+    # run swe agent
+    cmd = [
+        "sweagent", "run-batch",
+        f"--agent.model.name={agent_model}",
+        "--instances.type=swe_bench",
+        "--instances.subset=verified",
+        "--instances.split=test",
+        "--instances.slice=2:7",
+        "--agent.model.per_instance_cost_limit=2.00",
+        f"--output_dir={str(tasks_base)}",
+        f"--num_workers={num_workers}"
+    ]
+    subprocess.run(cmd)
+
+    with open(str(tasks_base) + "/preds.json", "r") as f, open(pred_dir, "a") as o:
+        preds = json.load(f)
+
+        for key, value in preds.items():
+            if value["model_name_or_path"] == agent_model.replace('/', '_'):
+                o.write(json.dumps({"model_name_or_path": agent_model.replace('/', '_'),
+                                    "instance_id": value["instance_id"],
+                                    "model_patch": value["model_patch"]}) + "\n")
+
+def run_bench() -> None:
     # verify with swebench
     cmd = [
         sys.executable, "-m", "swebench.harness.run_evaluation",
         f"--dataset_name={dataset_url}",
         f"--predictions_path={pred_dir}",
-        "--max_workers=1",
+        f"--max_workers={num_workers}",
         f"--run_id={dataset_url.replace('/', '_')}"
     ]
     subprocess.run(cmd)
@@ -74,15 +113,6 @@ def main() -> None:
     result_file = f"{agent_model.replace('/', '_')}.{dataset_url.replace('/', '_')}.json"
     shutil.move(result_file, str(tasks_base))
 
-def __has_patch(task_folder) -> str | None:
-    folders = os.listdir(str(task_folder))
-    if len(folders) > 0:
-        skip = os.listdir(str(task_folder))[0]
-        patch_path = str(task_folder) + f"/{skip}/{skip}.patch"
-
-        if os.path.exists(patch_path):
-            return patch_path
-    return None
 
 if __name__ == "__main__":
     main()
