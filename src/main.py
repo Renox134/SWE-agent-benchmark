@@ -110,8 +110,13 @@ def run_bench() -> None:
     subprocess.run(cmd)
 
     # move result file into correct task folder
-    result_file = f"{agent_model.replace('/', '_')}.{dataset_url.replace('/', '_')}.json"
-    shutil.move(result_file, str(tasks_base))
+    result_file = Path(f"{agent_model.replace('/', '_')}.{dataset_url.replace('/', '_')}.json")
+    destination = tasks_base / result_file.name
+
+    if destination.exists():
+        destination.unlink()
+
+    shutil.move(str(result_file), str(tasks_base))
 
 
 if __name__ == "__main__":
