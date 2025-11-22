@@ -1,3 +1,4 @@
 -e ./agent
 -e ./bench
 datasets==4.4.1
+plotly
