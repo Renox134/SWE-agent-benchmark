@@ -10,11 +10,26 @@ PATH_TO_FOLDER = "./tasks"
 FILE_SUFFIX = ".SWE-bench_SWE-bench_Verified.json"
 
 def main():
-    combined_chart("all")
-    return
+    models = {}
     for folder in os.listdir(PATH_TO_FOLDER):
         r = file_to_dict(PATH_TO_FOLDER + "/" + folder + "/" + folder + FILE_SUFFIX)
         visualize_single_performance(r, folder)
+        model_dict = {}
+        for task in r["resolved_ids"]:
+            model_dict[task] = "resolved"
+        for task in r["unresolved_ids"]:
+            model_dict[task] = "unresolved"
+        for task in r["error_ids"]:
+            model_dict[task] = "error"
+        for task in r["empty_patch_ids"]:
+            model_dict[task] = "empty patch"
+        for task in r["incomplete_ids"]:
+            if task in r["submitted_ids"]:
+                model_dict[task] = "incomplete"
+
+        models[folder] = model_dict
+
+    combined_chart("all")
 
 def get_task_dict() -> List[str]:
     from datasets import load_dataset
