@@ -8,8 +8,15 @@ from pathlib import Path
 
 num_workers = 5
 
+model_keys = ["openrouter/openai/gpt-4o",
+              "openrouter/anthropic/claude-sonnet-4",
+              "openrouter/deepseek/deepseek-v3.2",
+              "openrouter/qwen/qwen3-coder",
+              "openrouter/meta-llama/llama-3-70b-instruct",
+              "openrouter/mistralai/mistral-small-3.2-24b-instruct"]
+
 dataset_url: str = "SWE-bench/SWE-bench_Verified"
-agent_model: str = "openrouter/openai/gpt-4o"
+agent_model: str = "openrouter/anthropic/claude-sonnet-4"
 tasks_base = Path(f"tasks/{agent_model.replace('/', '_')}")
 tasks_base.mkdir(parents=True, exist_ok=True)
 pred_dir = str(tasks_base) + f"/predictions_{dataset_url.replace('/', '_')}.jsonl"
@@ -82,7 +89,7 @@ def run_agent_batch() -> None:
         "--instances.type=swe_bench",
         "--instances.subset=verified",
         "--instances.split=test",
-        "--instances.slice=:10",
+        "--instances.slice=:1",
         "--agent.model.per_instance_cost_limit=2.00",
         f"--output_dir={str(tasks_base)}",
         f"--num_workers={num_workers}"
