@@ -15,6 +15,22 @@ model_keys = ["openrouter/openai/gpt-4o",
               "openrouter/meta-llama/llama-3-70b-instruct",
               "openrouter/mistralai/mistral-small-3.2-24b-instruct"]
 
+# slices for testing (until we have something better)
+test_slices = [
+    ":1",       # astropy
+    "21:22",    # django
+    "252:253",  # matplotlib
+    "286:287",  # mwaskom
+    "288:289",  # pallets
+    "289:290",  # psf
+    "297:298",  # pydata
+    "319:320",  # pylint
+    "329:330",  # pytest
+    "348:349",  # scikit-learn
+    "380:381",  # sphinx
+    "424:425"   # sympy
+]
+
 dataset_url: str = "SWE-bench/SWE-bench_Verified"
 agent_model: str = "openrouter/anthropic/claude-sonnet-4"
 tasks_base = Path(f"tasks/{agent_model.replace('/', '_')}")
