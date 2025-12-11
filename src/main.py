@@ -13,10 +13,12 @@ agent_model: str = "openrouter/openai/gpt-4o"
 tasks_base = Path(f"tasks/{agent_model.replace('/', '_')}")
 tasks_base.mkdir(parents=True, exist_ok=True)
 pred_dir = str(tasks_base) + f"/predictions_{dataset_url.replace('/', '_')}.jsonl"
+datasets_base = Path("datasets")
+datasets_base.mkdir(exist_ok=True)
 
 def main() -> None:
     run_agent_batch()
-    run_bench()
+    # run_bench()
 
 def run_agent_single() -> None:
 
@@ -75,14 +77,25 @@ def run_agent_single() -> None:
             o.write(json.dumps(patch) + "\n")
 
 def run_agent_batch() -> None:
+    raw_dataset = load_dataset(dataset_url, split="test")
+
+    dataset = []
+    for task in raw_dataset:
+        dataset.append(task)
+
+    data_path = str(datasets_base) + f"/{dataset_url.replace('/', '_')}.json"
+
+    with open(data_path, "w", newline="\n") as o:
+        json.dump(dataset, o)
+
     # run swe agent
     cmd = [
         "sweagent", "run-batch",
         f"--agent.model.name={agent_model}",
         "--instances.type=swe_bench",
-        "--instances.subset=verified",
+        f"--instances.path={data_path}",
         "--instances.split=test",
-        "--instances.slice=:10",
+        "--instances.slice=3:4",
         "--agent.model.per_instance_cost_limit=2.00",
         f"--output_dir={str(tasks_base)}",
         f"--num_workers={num_workers}"
