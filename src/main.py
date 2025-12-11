@@ -8,6 +8,29 @@ from pathlib import Path
 
 num_workers = 5
 
+model_keys = ["openrouter/openai/gpt-4o",
+              "openrouter/anthropic/claude-sonnet-4",
+              "openrouter/deepseek/deepseek-v3.2",
+              "openrouter/qwen/qwen3-coder",
+              "openrouter/meta-llama/llama-3-70b-instruct",
+              "openrouter/mistralai/mistral-small-3.2-24b-instruct"]
+
+# slices for testing (until we have something better)
+test_slices = [
+    ":1",       # astropy
+    "21:22",    # django
+    "252:253",  # matplotlib
+    "286:287",  # mwaskom
+    "288:289",  # pallets
+    "289:290",  # psf
+    "297:298",  # pydata
+    "319:320",  # pylint
+    "329:330",  # pytest
+    "348:349",  # scikit-learn
+    "380:381",  # sphinx
+    "424:425"   # sympy
+]
+
 dataset_url: str = "SWE-bench/SWE-bench_Verified"
 agent_model: str = "openrouter/openai/gpt-4o"
 tasks_base = Path(f"tasks/{agent_model.replace('/', '_')}")
@@ -95,7 +118,6 @@ def run_agent_batch() -> None:
         "--instances.type=swe_bench",
         f"--instances.path={data_path}",
         "--instances.split=test",
-        "--instances.slice=3:4",
         "--agent.model.per_instance_cost_limit=2.00",
         f"--output_dir={str(tasks_base)}",
         f"--num_workers={num_workers}"
