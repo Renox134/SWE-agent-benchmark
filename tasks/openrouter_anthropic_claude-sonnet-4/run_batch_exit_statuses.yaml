@@ -1,4 +1,0 @@
-instances_by_exit_status:
-    Uncaught UnicodeEncodeError:
-    - astropy__astropy-12907
-total_cost: 2.011752

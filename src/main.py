@@ -18,17 +18,17 @@ model_keys = ["openrouter/openai/gpt-4o",
 # slices for testing (until we have something better)
 test_slices = [
     0,    # astropy
-    21,   # django
-    252,  # matplotlib
-    286,  # mwaskom
-    288,  # pallets
-    289,  # psf
-    297,  # pydata
-    319,  # pylint
-    329,  # pytest
-    348,  # scikit-learn
-    380,  # sphinx
-    424   # sympy
+    # 21,   # django
+    # 252,  # matplotlib
+    # 286,  # mwaskom
+    # 288,  # pallets
+    # 289,  # psf
+    # 297,  # pydata
+    # 319,  # pylint
+    # 329,  # pytest
+    # 348,  # scikit-learn
+    # 380,  # sphinx
+    # 424   # sympy
 ]
 
 dataset_url: str = "SWE-bench/SWE-bench_Verified"
@@ -36,8 +36,6 @@ agent_model: str = model_keys[3]
 tasks_base = Path(f"tasks/{agent_model.replace('/', '_')}")
 tasks_base.mkdir(parents=True, exist_ok=True)
 pred_dir = str(tasks_base) + f"/predictions_{dataset_url.replace('/', '_')}.jsonl"
-datasets_base = Path("datasets")
-datasets_base.mkdir(exist_ok=True)
 
 def main() -> None:
     run_agent_batch()
@@ -100,26 +98,15 @@ def run_agent_single() -> None:
             o.write(json.dumps(patch) + "\n")
 
 def run_agent_batch() -> None:
-    raw_dataset = load_dataset(dataset_url, split="test")
-
-    dataset = []
-    for i in test_slices:
-        task = raw_dataset[i]
-        dataset.append(task)
-
-    data_path = str(datasets_base) + f"/{dataset_url.replace('/', '_')}.json"
-
-    with open(data_path, "w", newline="\n") as o:
-        json.dump(dataset, o)
-
     # run swe agent
     cmd = [
         "sweagent", "run-batch",
         f"--agent.model.name={agent_model}",
         "--instances.type=swe_bench",
-        f"--instances.path={data_path}",
+        f"--instances.subset=verified",
         "--instances.split=test",
         "--agent.model.per_instance_cost_limit=2.00",
+        "--instances.slice=284:285",
         f"--output_dir={str(tasks_base)}",
         f"--num_workers={num_workers}"
     ]
