@@ -6,7 +6,7 @@ import os
 from datasets import load_dataset
 from pathlib import Path
 
-num_workers = 5
+num_workers = 12
 
 model_keys = ["openrouter/openai/gpt-4o",
               "openrouter/anthropic/claude-sonnet-4",
@@ -17,22 +17,22 @@ model_keys = ["openrouter/openai/gpt-4o",
 
 # slices for testing (until we have something better)
 test_slices = [
-    ":1",       # astropy
-    "21:22",    # django
-    "252:253",  # matplotlib
-    "286:287",  # mwaskom
-    "288:289",  # pallets
-    "289:290",  # psf
-    "297:298",  # pydata
-    "319:320",  # pylint
-    "329:330",  # pytest
-    "348:349",  # scikit-learn
-    "380:381",  # sphinx
-    "424:425"   # sympy
+    0,    # astropy
+    21,   # django
+    252,  # matplotlib
+    286,  # mwaskom
+    288,  # pallets
+    289,  # psf
+    297,  # pydata
+    319,  # pylint
+    329,  # pytest
+    348,  # scikit-learn
+    380,  # sphinx
+    424   # sympy
 ]
 
 dataset_url: str = "SWE-bench/SWE-bench_Verified"
-agent_model: str = "openrouter/openai/gpt-4o"
+agent_model: str = model_keys[3]
 tasks_base = Path(f"tasks/{agent_model.replace('/', '_')}")
 tasks_base.mkdir(parents=True, exist_ok=True)
 pred_dir = str(tasks_base) + f"/predictions_{dataset_url.replace('/', '_')}.jsonl"
@@ -41,7 +41,7 @@ datasets_base.mkdir(exist_ok=True)
 
 def main() -> None:
     run_agent_batch()
-    # run_bench()
+    run_bench()
 
 def run_agent_single() -> None:
 
@@ -103,7 +103,8 @@ def run_agent_batch() -> None:
     raw_dataset = load_dataset(dataset_url, split="test")
 
     dataset = []
-    for task in raw_dataset:
+    for i in test_slices:
+        task = raw_dataset[i]
         dataset.append(task)
 
     data_path = str(datasets_base) + f"/{dataset_url.replace('/', '_')}.json"
