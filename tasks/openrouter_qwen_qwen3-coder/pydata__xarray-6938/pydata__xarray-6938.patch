@@ -1,0 +1,93 @@
+diff --git a/xarray/core/dataarray.py b/xarray/core/dataarray.py
+index 32b24ef1..c16f39c9 100644
+--- a/xarray/core/dataarray.py
++++ b/xarray/core/dataarray.py
+@@ -196,7 +196,29 @@ class _LocIndexer:
+             # expand the indexer so we can handle Ellipsis
+             labels = indexing.expanded_indexer(key, self.data_array.ndim)
+             key = dict(zip(self.data_array.dims, labels))
+-        return self.data_array.sel(**key)
++        
++        # Handle the case where a dimension name conflicts with a parameter name
++        # For example, if we have a dimension named "method", we need to pass it
++        # as a positional argument to avoid conflict with the method parameter
++        sel_kwargs = {}
++        sel_indexers = {}
++        for k, v in key.items():
++            if k in ["method", "tolerance", "drop"]:
++                # These are parameter names of the sel method
++                if k in self.data_array.dims:
++                    # This is actually a dimension name, so we need to pass it as an indexer
++                    sel_indexers[k] = v
++                else:
++                    # This is actually a parameter, so we pass it as a keyword argument
++                    sel_kwargs[k] = v
++            else:
++                # This is not a parameter name, so we pass it as an indexer
++                sel_indexers[k] = v
++        
++        if sel_indexers:
++            return self.data_array.sel(indexers=sel_indexers, **sel_kwargs)
++        else:
++            return self.data_array.sel(**sel_kwargs)
+ 
+     def __setitem__(self, key, value) -> None:
+         if not utils.is_dict_like(key):
+diff --git a/xarray/core/indexing.py b/xarray/core/indexing.py
+index 843feb04..45102ae4 100644
+--- a/xarray/core/indexing.py
++++ b/xarray/core/indexing.py
+@@ -105,7 +105,7 @@ def get_indexer_nd(index, labels, method=None, tolerance=None):
+     return indexer
+ 
+ 
+-def convert_label_indexer(index, label, index_name="", method=None, tolerance=None):
++def convert_label_indexer(index, label, index_name="", indexer_method=None, tolerance=None):
+     """Given a pandas.Index and labels (e.g., from __getitem__) for one
+     dimension, return an indexer suitable for indexing an ndarray along that
+     dimension. If `index` is a pandas.MultiIndex and depending on `label`,
+@@ -114,7 +114,7 @@ def convert_label_indexer(index, label, index_name="", method=None, tolerance=No
+     new_index = None
+ 
+     if isinstance(label, slice):
+-        if method is not None or tolerance is not None:
++        if indexer_method is not None or tolerance is not None:
+             raise NotImplementedError(
+                 "cannot use ``method`` argument if any indexers are slice objects"
+             )
+@@ -178,7 +178,7 @@ def convert_label_indexer(index, label, index_name="", method=None, tolerance=No
+             if isinstance(index, pd.MultiIndex):
+                 indexer, new_index = index.get_loc_level(label_value, level=0)
+             elif isinstance(index, pd.CategoricalIndex):
+-                if method is not None:
++                if indexer_method is not None:
+                     raise ValueError(
+                         "'method' is not a valid kwarg when indexing using a CategoricalIndex."
+                     )
+@@ -188,7 +188,7 @@ def convert_label_indexer(index, label, index_name="", method=None, tolerance=No
+                     )
+                 indexer = index.get_loc(label_value)
+             else:
+-                indexer = index.get_loc(label_value, method=method, tolerance=tolerance)
++                indexer = index.get_loc(label_value, method=indexer_method, tolerance=tolerance)
+         elif label.dtype.kind == "b":
+             indexer = label
+         else:
+@@ -197,7 +197,7 @@ def convert_label_indexer(index, label, index_name="", method=None, tolerance=No
+                     "Vectorized selection is not available along "
+                     "MultiIndex variable: " + index_name
+                 )
+-            indexer = get_indexer_nd(index, label, method, tolerance)
++            indexer = get_indexer_nd(index, label, indexer_method, tolerance)
+             if np.any(indexer < 0):
+                 raise KeyError(f"not all values found in index {index_name!r}")
+     return indexer, new_index
+@@ -267,7 +267,7 @@ def remap_label_indexers(data_obj, indexers, method=None, tolerance=None):
+         else:
+             coords_dtype = data_obj.coords[dim].dtype
+             label = maybe_cast_to_coords_dtype(label, coords_dtype)
+-            idxr, new_idx = convert_label_indexer(index, label, dim, method, tolerance)
++            idxr, new_idx = convert_label_indexer(index, label, dim, indexer_method=method, tolerance=tolerance)
+             pos_indexers[dim] = idxr
+             if new_idx is not None:
+                 new_indexes[dim] = new_idx

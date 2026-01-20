@@ -1,4 +1,4 @@
 instances_by_exit_status:
-    submitted:
-    - matplotlib__matplotlib-26291
-total_cost: 0.4320451299999999
+    Uncaught DockerPullError:
+    - mwaskom__seaborn-3069
+total_cost: 0

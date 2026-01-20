@@ -1,0 +1,30 @@
+diff --git a/reproduce_issue.py b/reproduce_issue.py
+new file mode 100644
+index 00000000..9d027844
+--- /dev/null
++++ b/reproduce_issue.py
+@@ -0,0 +1,23 @@
++import xarray as xr
++
++# Load the tutorial dataset
++ds = xr.tutorial.load_dataset("air_temperature")
++
++# Print the original time attributes
++print("Original time attributes:")
++print(ds.time.attrs)
++
++# Apply xr.where with keep_attrs=True
++result = xr.where(True, ds.air, ds.air, keep_attrs=True)
++
++# Print the time attributes after applying xr.where
++print("\nTime attributes after xr.where:")
++print(result.time.attrs)
++
++# Check if the attributes are the same
++if ds.time.attrs == result.time.attrs:
++    print("\nSUCCESS: Coordinate attributes are preserved!")
++else:
++    print("\nERROR: Coordinate attributes are overwritten!")
++    print("Expected:", ds.time.attrs)
++    print("Got:", result.time.attrs)
+\ No newline at end of file

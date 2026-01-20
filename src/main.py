@@ -6,7 +6,7 @@ import os
 from datasets import load_dataset
 from pathlib import Path
 
-num_workers = 12
+num_workers = 7
 
 model_keys = ["openrouter/openai/gpt-4o",
               "openrouter/anthropic/claude-sonnet-4",
@@ -106,7 +106,7 @@ def run_agent_batch() -> None:
         f"--instances.subset=verified",
         "--instances.split=test",
         "--agent.model.per_instance_cost_limit=2.00",
-        "--instances.slice=284:285",
+        "--instances.slice=284:321",
         f"--output_dir={str(tasks_base)}",
         f"--num_workers={num_workers}"
     ]

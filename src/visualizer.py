@@ -5,6 +5,7 @@ from plotly.subplots import make_subplots
 import json
 import os
 import random
+import re
 
 PATH_TO_FOLDER = "./tasks"
 FILE_SUFFIX = ".SWE-bench_SWE-bench_Verified.json"
@@ -12,6 +13,18 @@ FILE_SUFFIX = ".SWE-bench_SWE-bench_Verified.json"
 def main():
     models = {}
     for folder in os.listdir(PATH_TO_FOLDER):
+        files = os.listdir(PATH_TO_FOLDER + "/" + folder)
+
+        # check if prediction file exists, skip folder otherwise
+        has_prediction_file = False
+        regex = r".*\.SWE-bench_SWE-bench_Verified\.json$"
+        for filename in files:
+            if re.search(regex, filename):
+                has_prediction_file = True
+                break
+        if not has_prediction_file:
+            continue
+        
         r = file_to_dict(PATH_TO_FOLDER + "/" + folder + "/" + folder + FILE_SUFFIX)
         visualize_single_performance(r, folder)
         model_dict = {}
