@@ -6,7 +6,7 @@ import os
 from datasets import load_dataset
 from pathlib import Path
 
-num_workers = 7
+num_workers = 6
 
 model_keys = ["openrouter/openai/gpt-4o",
               "openrouter/anthropic/claude-sonnet-4",
@@ -15,21 +15,7 @@ model_keys = ["openrouter/openai/gpt-4o",
               "openrouter/meta-llama/llama-3-70b-instruct",
               "openrouter/mistralai/mistral-small-3.2-24b-instruct"]
 
-# slices for testing (until we have something better)
-test_slices = [
-    0,    # astropy
-    # 21,   # django
-    # 252,  # matplotlib
-    # 286,  # mwaskom
-    # 288,  # pallets
-    # 289,  # psf
-    # 297,  # pydata
-    # 319,  # pylint
-    # 329,  # pytest
-    # 348,  # scikit-learn
-    # 380,  # sphinx
-    # 424   # sympy
-]
+slice = (284, 321)
 
 dataset_url: str = "SWE-bench/SWE-bench_Verified"
 agent_model: str = model_keys[3]
@@ -38,6 +24,7 @@ tasks_base.mkdir(parents=True, exist_ok=True)
 pred_dir = str(tasks_base) + f"/predictions_{dataset_url.replace('/', '_')}.jsonl"
 
 def main() -> None:
+    # generate_controll_preds()
     run_agent_batch()
     run_bench()
 
@@ -106,7 +93,7 @@ def run_agent_batch() -> None:
         f"--instances.subset=verified",
         "--instances.split=test",
         "--agent.model.per_instance_cost_limit=2.00",
-        "--instances.slice=284:321",
+        f"--instances.slice={':'.join(map(str, slice))}",
         f"--output_dir={str(tasks_base)}",
         f"--num_workers={num_workers}"
     ]
@@ -141,6 +128,14 @@ def run_bench() -> None:
 
     shutil.move(str(result_file), str(tasks_base))
 
+def generate_controll_preds() -> None:
+    dataset = load_dataset(dataset_url, split="test")
+
+    with open(pred_dir, "w", newline="\n") as o:
+        for idx in range(*slice):
+            o.write(json.dumps({"model_name_or_path": agent_model.replace('/', '_'),
+                                "instance_id": dataset[idx]["instance_id"],
+                                "model_patch": dataset[idx]["patch"]}) + "\n")
 
 if __name__ == "__main__":
     main()
