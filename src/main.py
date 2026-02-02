@@ -18,7 +18,7 @@ model_keys = ["openrouter/openai/gpt-4o",
 slice = (315, 351)
 
 dataset_url: str = "SWE-bench/SWE-bench_Verified"
-agent_model: str = model_keys[3]
+agent_model: str = model_keys[2]
 tasks_base = Path(f"tasks/{agent_model.replace('/', '_')}")
 tasks_base.mkdir(parents=True, exist_ok=True)
 pred_dir = str(tasks_base) + f"/predictions_{dataset_url.replace('/', '_')}.jsonl"
@@ -26,7 +26,7 @@ pred_dir = str(tasks_base) + f"/predictions_{dataset_url.replace('/', '_')}.json
 def main() -> None:
     # generate_controll_preds()
     run_agent_batch()
-    run_bench()
+    # run_bench()
 
 def run_agent_single() -> None:
 

@@ -1,0 +1,515 @@
+diff --git a/conftest.py b/conftest.py
+new file mode 100644
+index 000000000..9c5d69511
+--- /dev/null
++++ b/conftest.py
+@@ -0,0 +1,7 @@
++def pytest_configure(config):
++    config.addinivalue_line("markers", "foo: foo marker")
++    config.addinivalue_line("markers", "bar: bar marker")
++    config.addinivalue_line("markers", "one: one marker")
++    config.addinivalue_line("markers", "two: two marker")
++    config.addinivalue_line("markers", "base1: base1 marker")
++    config.addinivalue_line("markers", "base2: base2 marker")
+\ No newline at end of file
+diff --git a/reproduce_issue.py b/reproduce_issue.py
+new file mode 100644
+index 000000000..d5c86eb21
+--- /dev/null
++++ b/reproduce_issue.py
+@@ -0,0 +1,68 @@
++import pytest
++
++# Test case from PR description
++@pytest.mark.foo
++class Foo:
++    pass
++
++@pytest.mark.bar
++class Bar:
++    pass
++
++class TestDings(Foo, Bar):
++    def test_dings(self):
++        # This test should have both markers, foo and bar.
++        # In practice markers are resolved using MRO (so foo wins), unless the
++        # metaclass is applied
++        pass
++
++# Let's also test with a simpler case
++@pytest.mark.one
++class ClassOne:
++    pass
++
++@pytest.mark.two
++class ClassTwo:
++    pass
++
++class TestMultipleInheritance(ClassOne, ClassTwo):
++    def test_multiple_inheritance(self):
++        pass
++
++# Test with deeper inheritance
++@pytest.mark.base1
++class Base1:
++    pass
++
++@pytest.mark.base2
++class Base2:
++    pass
++
++class Middle(Base1):
++    pass
++
++class TestDeepInheritance(Middle, Base2):
++    def test_deep_inheritance(self):
++        pass
++
++if __name__ == "__main__":
++    # Let's inspect the markers
++    import inspect
++    
++    print("TestDings markers:", getattr(TestDings, 'pytestmark', []))
++    print("TestMultipleInheritance markers:", getattr(TestMultipleInheritance, 'pytestmark', []))
++    print("TestDeepInheritance markers:", getattr(TestDeepInheritance, 'pytestmark', []))
++    
++    # Also check the test function markers
++    print("\nChecking test function markers:")
++    for name, obj in inspect.getmembers(TestDings):
++        if name.startswith('test_'):
++            print(f"{name} markers:", getattr(obj, 'pytestmark', []))
++    
++    for name, obj in inspect.getmembers(TestMultipleInheritance):
++        if name.startswith('test_'):
++            print(f"{name} markers:", getattr(obj, 'pytestmark', []))
++    
++    for name, obj in inspect.getmembers(TestDeepInheritance):
++        if name.startswith('test_'):
++            print(f"{name} markers:", getattr(obj, 'pytestmark', []))
+\ No newline at end of file
+diff --git a/test_attribute_lookup.py b/test_attribute_lookup.py
+new file mode 100644
+index 000000000..89248c976
+--- /dev/null
++++ b/test_attribute_lookup.py
+@@ -0,0 +1,31 @@
++import pytest
++
++@pytest.mark.foo
++class Foo:
++    pass
++
++@pytest.mark.bar
++class Bar:
++    pass
++
++class TestDings(Foo, Bar):
++    pass
++
++# Check if pytestmark is in TestDings.__dict__
++print("'pytestmark' in TestDings.__dict__:", 'pytestmark' in TestDings.__dict__)
++print("'pytestmark' in Foo.__dict__:", 'pytestmark' in Foo.__dict__)
++print("'pytestmark' in Bar.__dict__:", 'pytestmark' in Bar.__dict__)
++
++# Check what getattr returns
++print("\ngetattr(TestDings, 'pytestmark', []):", getattr(TestDings, 'pytestmark', []))
++print("getattr(Foo, 'pytestmark', []):", getattr(Foo, 'pytestmark', []))
++print("getattr(Bar, 'pytestmark', []):", getattr(Bar, 'pytestmark', []))
++
++# Now test with a class that has its own pytestmark
++@pytest.mark.direct
++class TestWithDirectMark(Foo, Bar):
++    pass
++
++print("\n=== TestWithDirectMark ===")
++print("'pytestmark' in TestWithDirectMark.__dict__:", 'pytestmark' in TestWithDirectMark.__dict__)
++print("getattr(TestWithDirectMark, 'pytestmark', []):", getattr(TestWithDirectMark, 'pytestmark', []))
+\ No newline at end of file
+diff --git a/test_duplicate_markers.py b/test_duplicate_markers.py
+new file mode 100644
+index 000000000..29509adb3
+--- /dev/null
++++ b/test_duplicate_markers.py
+@@ -0,0 +1,15 @@
++import pytest
++
++# Test if duplicate markers are allowed
++@pytest.mark.foo
++@pytest.mark.foo
++def test_duplicate():
++    pass
++
++# Check the markers
++print("test_duplicate markers:", getattr(test_duplicate, 'pytestmark', []))
++
++# Run pytest to see what happens
++if __name__ == "__main__":
++    import sys
++    sys.exit(pytest.main([__file__, "-v"]))
+\ No newline at end of file
+diff --git a/test_markers_detailed.py b/test_markers_detailed.py
+new file mode 100644
+index 000000000..ca21d31ab
+--- /dev/null
++++ b/test_markers_detailed.py
+@@ -0,0 +1,71 @@
++import pytest
++import inspect
++
++# Test case from PR description
++@pytest.mark.foo
++class Foo:
++    pass
++
++@pytest.mark.bar
++class Bar:
++    pass
++
++class TestDings(Foo, Bar):
++    def test_dings(self):
++        pass
++
++# Let's also test with a simpler case
++@pytest.mark.one
++class ClassOne:
++    pass
++
++@pytest.mark.two
++class ClassTwo:
++    pass
++
++class TestMultipleInheritance(ClassOne, ClassTwo):
++    def test_multiple_inheritance(self):
++        pass
++
++# Test with deeper inheritance
++@pytest.mark.base1
++class Base1:
++    pass
++
++@pytest.mark.base2
++class Base2:
++    pass
++
++class Middle(Base1):
++    pass
++
++class TestDeepInheritance(Middle, Base2):
++    def test_deep_inheritance(self):
++        pass
++
++# Let's trace what happens when we access pytestmark
++print("Direct access to pytestmark attribute:")
++print("  Foo.pytestmark:", getattr(Foo, 'pytestmark', []))
++print("  Bar.pytestmark:", getattr(Bar, 'pytestmark', []))
++print("  TestDings.pytestmark:", getattr(TestDings, 'pytestmark', []))
++print()
++
++# Let's check the MRO
++print("MRO for TestDings:", TestDings.__mro__)
++print()
++
++# Let's manually check what markers we would get if we followed MRO
++def get_marks_via_mro(cls):
++    marks = []
++    for base in cls.__mro__:
++        if hasattr(base, 'pytestmark'):
++            base_marks = getattr(base, 'pytestmark', [])
++            if not isinstance(base_marks, list):
++                base_marks = [base_marks]
++            marks.extend(base_marks)
++    return marks
++
++print("Markers via MRO traversal:")
++print("  TestDings:", get_marks_via_mro(TestDings))
++print("  TestMultipleInheritance:", get_marks_via_mro(TestMultipleInheritance))
++print("  TestDeepInheritance:", get_marks_via_mro(TestDeepInheritance))
+\ No newline at end of file
+diff --git a/test_markers_direct.py b/test_markers_direct.py
+new file mode 100644
+index 000000000..2524de46c
+--- /dev/null
++++ b/test_markers_direct.py
+@@ -0,0 +1,25 @@
++import pytest
++from _pytest.mark.structures import get_unpacked_marks
++
++# Test case from PR description
++@pytest.mark.foo
++class Foo:
++    pass
++
++@pytest.mark.bar
++class Bar:
++    pass
++
++@pytest.mark.direct
++class TestDings(Foo, Bar):
++    def test_dings(self):
++        pass
++
++# Test what get_unpacked_marks returns
++print("get_unpacked_marks(TestDings):", list(get_unpacked_marks(TestDings)))
++print("TestDings.pytestmark:", getattr(TestDings, 'pytestmark', []))
++
++# Let's trace through the MRO manually
++print("\nMRO traversal:")
++for cls in TestDings.__mro__:
++    print(f"  {cls.__name__}: pytestmark = {getattr(cls, 'pytestmark', [])}")
+\ No newline at end of file
+diff --git a/test_markers_inheritance.py b/test_markers_inheritance.py
+new file mode 100644
+index 000000000..9e8d2ed13
+--- /dev/null
++++ b/test_markers_inheritance.py
+@@ -0,0 +1,49 @@
++import pytest
++from _pytest.mark.structures import get_unpacked_marks
++
++# Test case from PR description
++@pytest.mark.foo
++class Foo:
++    pass
++
++@pytest.mark.bar
++class Bar:
++    pass
++
++class TestDings(Foo, Bar):
++    def test_dings(self):
++        pass
++
++# Test what get_unpacked_marks returns
++print("get_unpacked_marks(TestDings):", list(get_unpacked_marks(TestDings)))
++print("TestDings.pytestmark:", getattr(TestDings, 'pytestmark', []))
++
++# Let's trace through the MRO manually
++print("\nMRO traversal:")
++for cls in TestDings.__mro__:
++    print(f"  {cls.__name__}: pytestmark = {getattr(cls, 'pytestmark', [])}")
++
++# Let's see what happens with a custom get_unpacked_marks that follows MRO
++def get_unpacked_marks_follow_mro(obj):
++    """Get all marks from an object and its base classes."""
++    marks = []
++    if inspect.isclass(obj):
++        for base in obj.__mro__:
++            if hasattr(base, 'pytestmark'):
++                base_marks = getattr(base, 'pytestmark', [])
++                if not isinstance(base_marks, list):
++                    base_marks = [base_marks]
++                marks.extend(base_marks)
++    else:
++        # For non-class objects, just get their own marks
++        mark_list = getattr(obj, "pytestmark", [])
++        if not isinstance(mark_list, list):
++            mark_list = [mark_list]
++        marks.extend(mark_list)
++    
++    # Normalize the marks
++    from _pytest.mark.structures import normalize_mark_list
++    return list(normalize_mark_list(marks))
++
++import inspect
++print("\nCustom get_unpacked_marks_follow_mro(TestDings):", get_unpacked_marks_follow_mro(TestDings))
+\ No newline at end of file
+diff --git a/test_markers_simple.py b/test_markers_simple.py
+new file mode 100644
+index 000000000..cdf49e879
+--- /dev/null
++++ b/test_markers_simple.py
+@@ -0,0 +1,43 @@
++import pytest
++
++# Test case from PR description
++@pytest.mark.foo
++class Foo:
++    pass
++
++@pytest.mark.bar
++class Bar:
++    pass
++
++class TestDings(Foo, Bar):
++    def test_dings(self):
++        assert True
++
++# Let's also test with a simpler case
++@pytest.mark.one
++class ClassOne:
++    pass
++
++@pytest.mark.two
++class ClassTwo:
++    pass
++
++class TestMultipleInheritance(ClassOne, ClassTwo):
++    def test_multiple_inheritance(self):
++        assert True
++
++# Test with deeper inheritance
++@pytest.mark.base1
++class Base1:
++    pass
++
++@pytest.mark.base2
++class Base2:
++    pass
++
++class Middle(Base1):
++    pass
++
++class TestDeepInheritance(Middle, Base2):
++    def test_deep_inheritance(self):
++        assert True
+\ No newline at end of file
+diff --git a/test_object_pytestmark.py b/test_object_pytestmark.py
+new file mode 100644
+index 000000000..381b050d6
+--- /dev/null
++++ b/test_object_pytestmark.py
+@@ -0,0 +1,14 @@
++import pytest
++
++# Check if object has pytestmark
++print("hasattr(object, 'pytestmark'):", hasattr(object, 'pytestmark'))
++print("getattr(object, 'pytestmark', 'NO'):", getattr(object, 'pytestmark', 'NO'))
++
++# Test with a simple class
++@pytest.mark.foo
++class Foo:
++    pass
++
++print("\nFoo.__mro__:", Foo.__mro__)
++for cls in Foo.__mro__:
++    print(f"  {cls}: hasattr('pytestmark') = {hasattr(cls, 'pytestmark')}")
+\ No newline at end of file
+diff --git a/test_pytest_run.py b/test_pytest_run.py
+new file mode 100644
+index 000000000..294a8ebf1
+--- /dev/null
++++ b/test_pytest_run.py
+@@ -0,0 +1,48 @@
++import pytest
++import sys
++
++# Test case from PR description
++@pytest.mark.foo
++class Foo:
++    pass
++
++@pytest.mark.bar
++class Bar:
++    pass
++
++class TestDings(Foo, Bar):
++    def test_dings(self):
++        pass
++
++# Let's also test with a simpler case
++@pytest.mark.one
++class ClassOne:
++    pass
++
++@pytest.mark.two
++class ClassTwo:
++    pass
++
++class TestMultipleInheritance(ClassOne, ClassTwo):
++    def test_multiple_inheritance(self):
++        pass
++
++# Test with deeper inheritance
++@pytest.mark.base1
++class Base1:
++    pass
++
++@pytest.mark.base2
++class Base2:
++    pass
++
++class Middle(Base1):
++    pass
++
++class TestDeepInheritance(Middle, Base2):
++    def test_deep_inheritance(self):
++        pass
++
++if __name__ == "__main__":
++    # Run pytest programmatically
++    sys.exit(pytest.main([__file__, "-v"]))
+\ No newline at end of file
+diff --git a/test_pytest_run2.py b/test_pytest_run2.py
+new file mode 100644
+index 000000000..cdf018963
+--- /dev/null
++++ b/test_pytest_run2.py
+@@ -0,0 +1,67 @@
++import pytest
++import sys
++
++# Register custom markers
++def pytest_configure(config):
++    config.addinivalue_line("markers", "foo: foo marker")
++    config.addinivalue_line("markers", "bar: bar marker")
++    config.addinivalue_line("markers", "one: one marker")
++    config.addinivalue_line("markers", "two: two marker")
++    config.addinivalue_line("markers", "base1: base1 marker")
++    config.addinivalue_line("markers", "base2: base2 marker")
++
++# Test case from PR description
++@pytest.mark.foo
++class Foo:
++    pass
++
++@pytest.mark.bar
++class Bar:
++    pass
++
++class TestDings(Foo, Bar):
++    def test_dings(self):
++        pass
++
++# Let's also test with a simpler case
++@pytest.mark.one
++class ClassOne:
++    pass
++
++@pytest.mark.two
++class ClassTwo:
++    pass
++
++class TestMultipleInheritance(ClassOne, ClassTwo):
++    def test_multiple_inheritance(self):
++        pass
++
++# Test with deeper inheritance
++@pytest.mark.base1
++class Base1:
++    pass
++
++@pytest.mark.base2
++class Base2:
++    pass
++
++class Middle(Base1):
++    pass
++
++class TestDeepInheritance(Middle, Base2):
++    def test_deep_inheritance(self):
++        pass
++
++if __name__ == "__main__":
++    # Run pytest programmatically with -m to test marker selection
++    # First test that all tests run without marker filtering
++    print("=== Running all tests ===")
++    result1 = pytest.main([__file__, "-v"])
++    print("\n=== Testing with -m 'foo' (should match test_dings) ===")
++    result2 = pytest.main([__file__, "-v", "-m", "foo"])
++    print("\n=== Testing with -m 'bar' (should match test_dings) ===")
++    result3 = pytest.main([__file__, "-v", "-m", "bar"])
++    print("\n=== Testing with -m 'one' (should match test_multiple_inheritance) ===")
++    result4 = pytest.main([__file__, "-v", "-m", "one"])
++    print("\n=== Testing with -m 'two' (should match test_multiple_inheritance) ===")
++    result5 = pytest.main([__file__, "-v", "-m", "two"])
+\ No newline at end of file

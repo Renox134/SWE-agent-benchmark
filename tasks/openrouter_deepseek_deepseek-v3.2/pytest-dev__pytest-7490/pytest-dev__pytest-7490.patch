@@ -1,0 +1,20 @@
+diff --git a/reproduce_issue.py b/reproduce_issue.py
+new file mode 100644
+index 000000000..85e3b48b2
+--- /dev/null
++++ b/reproduce_issue.py
+@@ -0,0 +1,13 @@
++import pytest
++
++@pytest.mark.skip
++def test_skip_location() -> None:
++    assert 0
++
++@pytest.mark.skipif(True, reason="skipif test")
++def test_skipif_location() -> None:
++    assert 0
++
++@pytest.mark.xfail
++def test_xfail_location() -> None:
++    assert 0
+\ No newline at end of file

@@ -1,0 +1,17 @@
+diff --git a/reproduce_issue.py b/reproduce_issue.py
+new file mode 100644
+index 000000000..eabaa9a04
+--- /dev/null
++++ b/reproduce_issue.py
+@@ -0,0 +1,10 @@
++import unittest
++
++class MyTestCase(unittest.TestCase):
++    def setUp(self):
++        xxx
++    @unittest.skip("hello")
++    def test_one(self):
++        pass
++    def tearDown(self):
++        xxx
+\ No newline at end of file

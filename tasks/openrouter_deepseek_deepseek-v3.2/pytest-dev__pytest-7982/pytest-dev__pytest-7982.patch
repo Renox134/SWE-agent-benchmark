@@ -1,0 +1,241 @@
+diff --git a/data.txt b/data.txt
+new file mode 100644
+index 000000000..40ebace06
+--- /dev/null
++++ b/data.txt
+@@ -0,0 +1 @@
++code=%3D%3D%3D%3D%3D%3D%3D%3D%3D%3D%3D%3D%3D%3D%3D%3D%3D%3D%3D%3D%3D%3D%3D%3D%3D%3D%3D%3D%3D%3D%3D%3D%3D%3D%3D%3D%3D%3D%3D%3D%3D%3D%3D%3D%3D%3D%3D%3D%3D%3D%3D%3D%3D%3D%3D%3D%3D%3D%3D%3D%3D%3D%3D%3D%3D%3D%3D%3D%3D%3D%3D%3D%3D%3D%3D%3D%3D%3D%3D%3D%3D%3D%3D%3D%3D%3D%3D%3D%3D%3D%3D%3D%3D%3D%3D%3D%3D%3D%3D%3D%3D%3D%3D%3D%3D%3D%3D%3D%3D%3D%3D%3D%3D%3D%3D%3D%3D%3D%3D%3D%3D%3D%3D%3D%3D+test+session+starts+%3D%3D%3D%3D%3D%3D%3D%3D%3D%3D%3D%3D%3D%3D%3D%3D%3D%3D%3D%3D%3D%3D%3D%3D%3D%3D%3D%3D%3D%3D%3D%3D%3D%3D%3D%3D%3D%3D%3D%3D%3D%3D%3D%3D%3D%3D%3D%3D%3D%3D%3D%3D%3D%3D%3D%3D%3D%3D%3D%3D%3D%3D%3D%3D%3D%3D%3D%3D%3D%3D%3D%3D%3D%3D%3D%3D%3D%3D%3D%3D%3D%3D%3D%3D%3D%3D%3D%3D%3D%3D%3D%3D%3D%3D%3D%3D%3D%3D%3D%3D%3D%3D%3D%3D%3D%3D%3D%3D%3D%3D%3D%3D%3D%3D%3D%3D%3D%3D%3D%3D%3D%3D%3D%3D%3D%3D%0Aplatform+linux+--+Python+3.7.4%2C+pytest-5.0.1%2C+py-1.8.0%2C+pluggy-0.12.0+--+%2Fhome%2Fgoerz%2FDocuments%2FProgramming%2Fqdyn_sequential%2Fvenv%2Fbin%2Fpython%0Arootdir%3A+%2Fhome%2Fgoerz%2FDocuments%2FProgramming%2Fqdyn_sequential%0Aplugins%3A+xdist-1.29.0%2C+forked-1.0.2%0A%0Dgw0+I+%2F+gw1+I+%2F+gw2+I+%2F+gw3+I+%2F+gw4+I+%2F+gw5+I+%2F+gw6+I+%2F+gw7+I+%2F+gw8+I+%2F+gw9+I+%2F+gw10+I+%2F+gw11+I%0Dgw0+C+%2F+gw1+I+%2F+gw2+I+%2F+gw3+I+%2F+gw4+I+%2F+gw5+I+%2F+gw6+I+%2F+gw7+I+%2F+gw8+I+%2F+gw9+I+%2F+gw10+I+%2F+gw11+I%0Dgw0+C+%2F+gw1+C+%2F+gw2+I+%2F+gw3+I+%2F+gw4+I+%2F+gw5+I+%2F+gw6+I+%2F+gw7+I+%2F+gw8+I+%2F+gw9+I+%2F+gw10+I+%2F+gw11+I%0Dgw0+C+%2F+gw1+C+%2F+gw2+C+%2F+gw3+I+%2F+gw4+I+%2F+gw5+I+%2F+gw6+I+%2F+gw7+I+%2F+gw8+I+%2F+gw9+I+%2F+gw10+I+%2F+gw11+I%0Dgw0+C+%2F+gw1+C+%2F+gw2+C+%2F+gw3+C+%2F+gw4+I+%2F+gw5+I+%2F+gw6+I+%2F+gw7+I+%2F+gw8+I+%2F+gw9+I+%2F+gw10+I+%2F+gw11+I%0Dgw0+C+%2F+gw1+C+%2F+gw2+C+%2F+gw3+C+%2F+gw4+C+%2F+gw5+I+%2F+gw6+I+%2F+gw7+I+%2F+gw8+I+%2F+gw9+I+%2F+gw10+I+%2F+gw11+I%0Dgw0+C+%2F+gw1+C+%2F+gw2+C+%2F+gw3+C+%2F+gw4+C+%2F+gw5+C+%2F+gw6+I+%2F+gw7+I+%2F+gw8+I+%2F+gw9+I+%2F+gw10+I+%2F+gw11+I%0Dgw0+C+%2F+gw1+C+%2F+gw2+C+%2F+gw3+C+%2F+gw4+C+%2F+gw5+C+%2F+gw6+C+%2F+gw7+I+%2F+gw8+I+%2F+gw9+I+%2F+gw10+I+%2F+gw11+I%0Dgw0+C+%2F+gw1+C+%2F+gw2+C+%2F+gw3+C+%2F+gw4+C+%2F+gw5+C+%2F+gw6+C+%2F+gw7+C+%2F+gw8+I+%2F+gw9+I+%2F+gw10+I+%2F+gw11+I%0Dgw0+C+%2F+gw1+C+%2F+gw2+C+%2F+gw3+C+%2F+gw4+C+%2F+gw5+C+%2F+gw6+C+%2F+gw7+C+%2F+gw8+C+%2F+gw9+I+%2F+gw10+I+%2F+gw11+I%0Dgw0+C+%2F+gw1+C+%2F+gw2+C+%2F+gw3+C+%2F+gw4+C+%2F+gw5+C+%2F+gw6+C+%2F+gw7+C+%2F+gw8+C+%2F+gw9+C+%2F+gw10+I+%2F+gw11+I%0Dgw0+C+%2F+gw1+C+%2F+gw2+C+%2F+gw3+C+%2F+gw4+C+%2F+gw5+C+%2F+gw6+C+%2F+gw7+C+%2F+gw8+C+%2F+gw9+C+%2F+gw10+C+%2F+gw11+I%0Dgw0+C+%2F+gw1+C+%2F+gw2+C+%2F+gw3+C+%2F+gw4+C+%2F+gw5+C+%2F+gw6+C+%2F+gw7+C+%2F+gw8+C+%2F+gw9+C+%2F+gw10+C+%2F+gw11+C%0Dgw0+C+%2F+gw1+C+%2F+gw2+ok+%2F+gw3+C+%2F+gw4+C+%2F+gw5+C+%2F+gw6+C+%2F+gw7+C+%2F+gw8+C+%2F+gw9+C+%2F+gw10+C+%2F+gw11+C%0Dgw0+C+%2F+gw1+ok+%2F+gw2+ok+%2F+gw3+C+%2F+gw4+C+%2F+gw5+C+%2F+gw6+C+%2F+gw7+C+%2F+gw8+C+%2F+gw9+C+%2F+gw10+C+%2F+gw11+C%0Dgw0+ok+%2F+gw1+ok+%2F+gw2+ok+%2F+gw3+C+%2F+gw4+C+%2F+gw5+C+%2F+gw6+C+%2F+gw7+C+%2F+gw8+C+%2F+gw9+C+%2F+gw10+C+%2F+gw11+C%0Dgw0+ok+%2F+gw1+ok+%2F+gw2+ok+%2F+gw3+C+%2F+gw4+ok+%2F+gw5+C+%2F+gw6+C+%2F+gw7+C+%2F+gw8+C+%2F+gw9+C+%2F+gw10+C+%2F+gw11+C%0Dgw0+ok+%2F+gw1+ok+%2F+gw2+ok+%2F+gw3+ok+%2F+gw4+ok+%2F+gw5+C+%2F+gw6+C+%2F+gw7+C+%2F+gw8+C+%2F+gw9+C+%2F+gw10+C+%2F+gw11+C%0Dgw0+ok+%2F+gw1+ok+%2F+gw2+ok+%2F+gw3+ok+%2F+gw4+ok+%2F+gw5+ok+%2F+gw6+C+%2F+gw7+C+%2F+gw8+C+%2F+gw9+C+%2F+gw10+C+%2F+gw11+C%0Dgw0+ok+%2F+gw1+ok+%2F+gw2+ok+%2F+gw3+ok+%2F+gw4+ok+%2F+gw5+ok+%2F+gw6+ok+%2F+gw7+C+%2F+gw8+C+%2F+gw9+C+%2F+gw10+C+%2F+gw11+C%0Dgw0+ok+%2F+gw1+ok+%2F+gw2+ok+%2F+gw3+ok+%2F+gw4+ok+%2F+gw5+ok+%2F+gw6+ok+%2F+gw7+ok+%2F+gw8+C+%2F+gw9+C+%2F+gw10+C+%2F+gw11+C%0Dgw0+ok+%2F+gw1+ok+%2F+gw2+ok+%2F+gw3+ok+%2F+gw4+ok+%2F+gw5+ok+%2F+gw6+ok+%2F+gw7+ok+%2F+gw8+ok+%2F+gw9+C+%2F+gw10+C+%2F+gw11+C%0Dgw0+ok+%2F+gw1+ok+%2F+gw2+ok+%2F+gw3+ok+%2F+gw4+ok+%2F+gw5+ok+%2F+gw6+ok+%2F+gw7+ok+%2F+gw8+ok+%2F+gw9+ok+%2F+gw10+C+%2F+gw11+C%0Dgw0+ok+%2F+gw1+ok+%2F+gw2+ok+%2F+gw3+ok+%2F+gw4+ok+%2F+gw5+ok+%2F+gw6+ok+%2F+gw7+ok+%2F+gw8+ok+%2F+gw9+ok+%2F+gw10+ok+%2F+gw11+C%0Dgw0+ok+%2F+gw1+ok+%2F+gw2+ok+%2F+gw3+ok+%2F+gw4+ok+%2F+gw5+ok+%2F+gw6+ok+%2F+gw7+ok+%2F+gw8+ok+%2F+gw9+ok+%2F+gw10+ok+%2F+gw11+ok%0Dgw0+ok+%2F+gw1+ok+%2F+gw2+ok+%2F+gw3+ok+%2F+gw4+ok+%2F+gw5+%5B202%5D+%2F+gw6+ok+%2F+gw7+ok+%2F+gw8+ok+%2F+gw9+ok+%2F+gw10+ok+%2F+gw11+ok%0Dgw0+ok+%2F+gw1+ok+%2F+gw2+ok+%2F+gw3+%5B202%5D+%2F+gw4+ok+%2F+gw5+%5B202%5D+%2F+gw6+ok+%2F+gw7+ok+%2F+gw8+ok+%2F+gw9+ok+%2F+gw10+ok+%2F+gw11+ok%0Dgw0+ok+%2F+gw1+ok+%2F+gw2+ok+%2F+gw3+%5B202%5D+%2F+gw4+%5B202%5D+%2F+gw5+%5B202%5D+%2F+gw6+ok+%2F+gw7+ok+%2F+gw8+ok+%2F+gw9+ok+%2F+gw10+ok+%2F+gw11+ok%0Dgw0+ok+%2F+gw1+ok+%2F+gw2+ok+%2F+gw3+%5B202%5D+%2F+gw4+%5B202%5D+%2F+gw5+%5B202%5D+%2F+gw6+ok+%2F+gw7+%5B202%5D+%2F+gw8+ok+%2F+gw9+ok+%2F+gw10+ok+%2F+gw11+ok%0Dgw0+%5B202%5D+%2F+gw1+ok+%2F+gw2+ok+%2F+gw3+%5B202%5D+%2F+gw4+%5B202%5D+%2F+gw5+%5B202%5D+%2F+gw6+ok+%2F+gw7+%5B202%5D+%2F+gw8+ok+%2F+gw9+ok+%2F+gw10+ok+%2F+gw11+ok%0Dgw0+%5B202%5D+%2F+gw1+ok+%2F+gw2+ok+%2F+gw3+%5B202%5D+%2F+gw4+%5B202%5D+%2F+gw5+%5B202%5D+%2F+gw6+ok+%2F+gw7+%5B202%5D+%2F+gw8+ok+%2F+gw9+ok+%2F+gw10+ok+%2F+gw11+%5B202%5D%0Dgw0+%5B202%5D+%2F+gw1+%5B202%5D+%2F+gw2+ok+%2F+gw3+%5B202%5D+%2F+gw4+%5B202%5D+%2F+gw5+%5B202%5D+%2F+gw6+ok+%2F+gw7+%5B202%5D+%2F+gw8+ok+%2F+gw9+ok+%2F+gw10+ok+%2F+gw11+%5B202%5D%0Dgw0+%5B202%5D+%2F+gw1+%5B202%5D+%2F+gw2+ok+%2F+gw3+%5B202%5D+%2F+gw4+%5B202%5D+%2F+gw5+%5B202%5D+%2F+gw6+%5B202%5D+%2F+gw7+%5B202%5D+%2F+gw8+ok+%2F+gw9+ok+%2F+gw10+ok+%2F+gw11+%5B202%5D%0Dgw0+%5B202%5D+%2F+gw1+%5B202%5D+%2F+gw2+ok+%2F+gw3+%5B202%5D+%2F+gw4+%5B202%5D+%2F+gw5+%5B202%5D+%2F+gw6+%5B202%5D+%2F+gw7+%5B202%5D+%2F+gw8+ok+%2F+gw9+%5B202%5D+%2F+gw10+ok+%2F+gw11+%5B202%5D%0Dgw0+%5B202%5D+%2F+gw1+%5B202%5D+%2F+gw2+ok+%2F+gw3+%5B202%5D+%2F+gw4+%5B202%5D+%2F+gw5+%5B202%5D+%2F+gw6+%5B202%5D+%2F+gw7+%5B202%5D+%2F+gw8+%5B202%5D+%2F+gw9+%5B202%5D+%2F+gw10+ok+%2F+gw11+%5B202%5D%0Dgw0+%5B202%5D+%2F+gw1+%5B202%5D+%2F+gw2+ok+%2F+gw3+%5B202%5D+%2F+gw4+%5B202%5D+%2F+gw5+%5B202%5D+%2F+gw6+%5B202%5D+%2F+gw7+%5B202%5D+%2F+gw8+%5B202%5D+%2F+gw9+%5B202%5D+%2F+gw10+%5B202%5D+%2F+gw11+%5B202%5D%0Dgw0+%5B202%5D+%2F+gw1+%5B202%5D+%2F+gw2+%5B202%5D+%2F+gw3+%5B202%5D+%2F+gw4+%5B202%5D+%2F+gw5+%5B202%5D+%2F+gw6+%5B202%5D+%2F+gw7+%5B202%5D+%2F+gw8+%5B202%5D+%2F+gw9+%5B202%5D+%2F+gw10+%5B202%5D+%2F+gw11+%5B202%5D%0A.............s.....................ss..........................................................s.x........................................................................................................%0A%3D%3D%3D%3D%3D%3D%3D%3D%3D%3D%3D%3D%3D%3D%3D%3D%3D%3D%3D%3D%3D%3D%3D%3D%3D%3D%3D%3D%3D%3D%3D%3D%3D%3D%3D%3D%3D%3D%3D%3D%3D%3D%3D%3D%3D%3D%3D%3D%3D%3D%3D%3D%3D%3D%3D%3D%3D%3D%3D%3D%3D%3D%3D%3D%3D%3D%3D%3D%3D%3D%3D%3D%3D%3D%3D%3D%3D%3D%3D%3D%3D%3D%3D%3D%3D%3D%3D%3D%3D%3D%3D%3D%3D%3D%3D%3D%3D%3D%3D%3D%3D%3D%3D%3D%3D%3D%3D%3D%3D%3D%3D%3D%3D%3D%3D%3D%3D%3D%3D%3D%3D%3D%3D%3D%3D%3D%3D+warnings+summary+%3D%3D%3D%3D%3D%3D%3D%3D%3D%3D%3D%3D%3D%3D%3D%3D%3D%3D%3D%3D%3D%3D%3D%3D%3D%3D%3D%3D%3D%3D%3D%3D%3D%3D%3D%3D%3D%3D%3D%3D%3D%3D%3D%3D%3D%3D%3D%3D%3D%3D%3D%3D%3D%3D%3D%3D%3D%3D%3D%3D%3D%3D%3D%3D%3D%3D%3D%3D%3D%3D%3D%3D%3D%3D%3D%3D%3D%3D%3D%3D%3D%3D%3D%3D%3D%3D%3D%3D%3D%3D%3D%3D%3D%3D%3D%3D%3D%3D%3D%3D%3D%3D%3D%3D%3D%3D%3D%3D%3D%3D%3D%3D%3D%3D%3D%3D%3D%3D%3D%3D%3D%3D%3D%3D%3D%3D%3D%0Avenv%2Flib%2Fpython3.7%2Fsite-packages%2F_pytest%2Fmark%2Fstructures.py%3A332%0Avenv%2Flib%2Fpython3.7%2Fsite-packages%2F_pytest%2Fmark%2Fstructures.py%3A332%0Avenv%2Flib%2Fpython3.7%2Fsite-packages%2F_pytest%2Fmark%2Fstructures.py%3A332%0Avenv%2Flib%2Fpython3.7%2Fsite-packages%2F_pytest%2Fmark%2Fstructures.py%3A332%0Avenv%2Flib%2Fpython3.7%2Fsite-packages%2F_pytest%2Fmark%2Fstructures.py%3A332%0Avenv%2Flib%2Fpython3.7%2Fsite-packages%2F_pytest%2Fmark%2Fstructures.py%3A332%0Avenv%2Flib%2Fpython3.7%2Fsite-packages%2F_pytest%2Fmark%2Fstructures.py%3A332%0Avenv%2Flib%2Fpython3.7%2Fsite-packages%2F_pytest%2Fmark%2Fstructures.py%3A332%0Avenv%2Flib%2Fpython3.7%2Fsite-packages%2F_pytest%2Fmark%2Fstructures.py%3A332%0Avenv%2Flib%2Fpython3.7%2Fsite-packages%2F_pytest%2Fmark%2Fstructures.py%3A332%0Avenv%2Flib%2Fpython3.7%2Fsite-packages%2F_pytest%2Fmark%2Fstructures.py%3A332%0Avenv%2Flib%2Fpython3.7%2Fsite-packages%2F_pytest%2Fmark%2Fstructures.py%3A332%0Avenv%2Flib%2Fpython3.7%2Fsite-packages%2F_pytest%2Fmark%2Fstructures.py%3A332%0Avenv%2Flib%2Fpython3.7%2Fsite-packages%2F_pytest%2Fmark%2Fstructures.py%3A332%0Avenv%2Flib%2Fpython3.7%2Fsite-packages%2F_pytest%2Fmark%2Fstructures.py%3A332%0Avenv%2Flib%2Fpython3.7%2Fsite-packages%2F_pytest%2Fmark%2Fstructures.py%3A332%0Avenv%2Flib%2Fpython3.7%2Fsite-packages%2F_pytest%2Fmark%2Fstructures.py%3A332%0Avenv%2Flib%2Fpython3.7%2Fsite-packages%2F_pytest%2Fmark%2Fstructures.py%3A332%0Avenv%2Flib%2Fpython3.7%2Fsite-packages%2F_pytest%2Fmark%2Fstructures.py%3A332%0Avenv%2Flib%2Fpython3.7%2Fsite-packages%2F_pytest%2Fmark%2Fstructures.py%3A332%0Avenv%2Flib%2Fpython3.7%2Fsite-packages%2F_pytest%2Fmark%2Fstructures.py%3A332%0Avenv%2Flib%2Fpython3.7%2Fsite-packages%2F_pytest%2Fmark%2Fstructures.py%3A332%0Avenv%2Flib%2Fpython3.7%2Fsite-packages%2F_pytest%2Fmark%2Fstructures.py%3A332%0Avenv%2Flib%2Fpython3.7%2Fsite-packages%2F_pytest%2Fmark%2Fstructures.py%3A332%0A++%2Fhome%2Fgoerz%2FDocuments%2FProgramming%2Fqdyn_sequential%2Fvenv%2Flib%2Fpython3.7%2Fsite-packages%2F_pytest%2Fmark%2Fstructures.py%3A332%3A+PytestUnknownMarkWarning%3A+Unknown+pytest.mark.multicore+-+is+this+a+typo%3F++You+can+register+custom+marks+to+avoid+this+warning+-+for+details%2C+see+https%3A%2F%2Fdocs.pytest.org%2Fen%2Flatest%2Fmark.html%0A++++PytestUnknownMarkWarning%2C%0A%0Avenv%2Flib%2Fpython3.7%2Fsite-packages%2Fpyximport%2Fpyximport.py%3A51%0Avenv%2Flib%2Fpython3.7%2Fsite-packages%2Fpyximport%2Fpyximport.py%3A51%0Avenv%2Flib%2Fpython3.7%2Fsite-packages%2Fpyximport%2Fpyximport.py%3A51%0Avenv%2Flib%2Fpython3.7%2Fsite-packages%2Fpyximport%2Fpyximport.py%3A51%0Avenv%2Flib%2Fpython3.7%2Fsite-packages%2Fpyximport%2Fpyximport.py%3A51%0Avenv%2Flib%2Fpython3.7%2Fsite-packages%2Fpyximport%2Fpyximport.py%3A51%0Avenv%2Flib%2Fpython3.7%2Fsite-packages%2Fpyximport%2Fpyximport.py%3A51%0Avenv%2Flib%2Fpython3.7%2Fsite-packages%2Fpyximport%2Fpyximport.py%3A51%0Avenv%2Flib%2Fpython3.7%2Fsite-packages%2Fpyximport%2Fpyximport.py%3A51%0Avenv%2Flib%2Fpython3.7%2Fsite-packages%2Fpyximport%2Fpyximport.py%3A51%0Avenv%2Flib%2Fpython3.7%2Fsite-packages%2Fpyximport%2Fpyximport.py%3A51%0Avenv%2Flib%2Fpython3.7%2Fsite-packages%2Fpyximport%2Fpyximport.py%3A51%0A++%2Fhome%2Fgoerz%2FDocuments%2FProgramming%2Fqdyn_sequential%2Fvenv%2Flib%2Fpython3.7%2Fsite-packages%2Fpyximport%2Fpyximport.py%3A51%3A+DeprecationWarning%3A+the+imp+module+is+deprecated+in+favour+of+importlib%3B+see+the+module%27s+documentation+for+alternative+uses%0A++++import+imp%0A%0A--+Docs%3A+https%3A%2F%2Fdocs.pytest.org%2Fen%2Flatest%2Fwarnings.html%0A%3D%3D%3D%3D%3D%3D%3D%3D%3D%3D%3D%3D%3D%3D%3D%3D%3D%3D%3D%3D%3D%3D%3D%3D%3D%3D%3D%3D%3D%3D%3D%3D%3D%3D%3D%3D%3D%3D%3D%3D%3D%3D%3D%3D%3D%3D%3D%3D%3D%3D%3D%3D%3D%3D%3D%3D%3D%3D%3D%3D%3D%3D%3D%3D%3D%3D%3D%3D%3D%3D%3D%3D%3D%3D%3D%3D%3D%3D%3D%3D%3D%3D%3D%3D%3D%3D%3D%3D%3D%3D%3D%3D%3D%3D%3D%3D%3D%3D%3D%3D%3D%3D%3D%3D%3D%3D%3D%3D%3D%3D%3D%3D%3D%3D%3D%3D%3D%3D%3D%3D%3D%3D%3D+slowest+5+test+durations+%3D%3D%3D%3D%3D%3D%3D%3D%3D%3D%3D%3D%3D%3D%3D%3D%3D%3D%3D%3D%3D%3D%3D%3D%3D%3D%3D%3D%3D%3D%3D%3D%3D%3D%3D%3D%3D%3D%3D%3D%3D%3D%3D%3D%3D%3D%3D%3D%3D%3D%3D%3D%3D%3D%3D%3D%3D%3D%3D%3D%3D%3D%3D%3D%3D%3D%3D%3D%3D%3D%3D%3D%3D%3D%3D%3D%3D%3D%3D%3D%3D%3D%3D%3D%3D%3D%3D%3D%3D%3D%3D%3D%3D%3D%3D%3D%3D%3D%3D%3D%3D%3D%3D%3D%3D%3D%3D%3D%3D%3D%3D%3D%3D%3D%3D%3D%3D%3D%3D%3D%3D%3D%3D%0A13.28s+call+++++tests%2Ftest_simple.py%3A%3Atest_stdout%5B.%2Fprojtests-.%2Ftestproj%5D%0A12.75s+call+++++tests%2Ftest_simple.py%3A%3Atest_stdout%5B.%2Fpulsetests-.%2Fwigner_test%5D%0A11.72s+call+++++tests%2Ftest_simple.py%3A%3Atest_stdout%5B.%2Fnitotests-.%2Fito_HO%5D%0A8.24s+call+++++tests%2Ftest_simple.py%3A%3Atest_stdout%5B.%2Ffemdvrtests-cmd174%5D%0A8.13s+call+++++tests%2Ftest_simple.py%3A%3Atest_stdout%5B.%2Fpsitests-.%2F23Dcart_overlaps%5D%0A%3D%3D%3D%3D%3D%3D%3D%3D%3D%3D%3D%3D%3D%3D%3D%3D%3D%3D%3D%3D%3D%3D%3D%3D%3D%3D%3D%3D%3D%3D%3D%3D%3D%3D%3D%3D%3D%3D%3D%3D%3D%3D%3D%3D%3D%3D%3D%3D%3D%3D%3D%3D%3D%3D%3D%3D%3D%3D%3D%3D%3D%3D%3D%3D%3D%3D%3D%3D%3D%3D%3D%3D%3D%3D%3D%3D%3D%3D%3D%3D%3D%3D%3D%3D%3D%3D%3D%3D%3D%3D%3D%3D%3D%3D%3D%3D%3D%3D%3D%3D%3D%3D%3D%3D+197+passed%2C+4+skipped%2C+1+xfailed%2C+36+warnings+in+45.72+seconds+%3D%3D%3D%3D%3D%3D%3D%3D%3D%3D%3D%3D%3D%3D%3D%3D%3D%3D%3D%3D%3D%3D%3D%3D%3D%3D%3D%3D%3D%3D%3D%3D%3D%3D%3D%3D%3D%3D%3D%3D%3D%3D%3D%3D%3D%3D%3D%3D%3D%3D%3D%3D%3D%3D%3D%3D%3D%3D%3D%3D%3D%3D%3D%3D%3D%3D%3D%3D%3D%3D%3D%3D%3D%3D%3D%3D%3D%3D%3D%3D%3D%3D%3D%3D%3D%3D%3D%3D%3D%3D%3D%3D%3D%3D%3D%3D%3D%3D%3D%3D%3D%3D%3D%3D%0A&lexer=python3&expiry=1week
+\ No newline at end of file
+diff --git a/reproduce_error.py b/reproduce_error.py
+new file mode 100644
+index 000000000..e0d64bf3b
+--- /dev/null
++++ b/reproduce_error.py
+@@ -0,0 +1,65 @@
++#!/usr/bin/env python
++"""Script to reproduce the pastebin lexer issue."""
++
++import sys
++import tempfile
++from urllib.request import urlopen
++from urllib.parse import urlencode
++
++# First, let's test the exact example from the PR description
++print("Testing with data.txt from PR description...")
++# Create a test file with problematic content
++test_content = b"""test session starts =======================================================
++platform linux -- Python 3.7.4, pytest-5.1.2, py-1.8.0, pluggy-0.13.0
++rootdir: /home/user/project
++collected 1 item
++
++test_file.py F                                                              [100%]
++
++======================================================= FAILURES ========================================================
++______________________________________________________ test_example ______________________________________________________
++
++    def test_example():
++>       assert 1 == 2
++E       assert 1 == 2
++
++test_file.py:2: AssertionError
++====================================================== 1 failed in 0.02s ======================================================="""
++
++# Test with python3 lexer (current behavior)
++params = {
++    "code": test_content,
++    "lexer": "python3",
++    "expiry": "1week",
++}
++url = "https://bpaste.net"
++
++print(f"Testing with lexer='python3'...")
++try:
++    response = urlopen(url, data=urlencode(params).encode("ascii")).read()
++    print("Success with lexer='python3'")
++except Exception as e:
++    print(f"Error with lexer='python3': {e}")
++
++# Test with text lexer (proposed fix)
++params["lexer"] = "text"
++print(f"\nTesting with lexer='text'...")
++try:
++    response = urlopen(url, data=urlencode(params).encode("ascii")).read()
++    print("Success with lexer='text'")
++except Exception as e:
++    print(f"Error with lexer='text': {e}")
++
++# Now let's test the actual pastebin function from pytest
++print("\n\nTesting the actual create_new_paste function...")
++sys.path.insert(0, '/testbed/src')
++from _pytest.pastebin import create_new_paste
++
++# Create a test with content that might trigger the issue
++test_content_str = test_content.decode('utf-8')
++print(f"Testing create_new_paste with problematic content...")
++try:
++    result = create_new_paste(test_content.encode('utf-8'))
++    print(f"Result: {result}")
++except Exception as e:
++    print(f"Error: {e}")
+\ No newline at end of file
+diff --git a/src/_pytest/pastebin.py b/src/_pytest/pastebin.py
+index 41576a615..672da66a3 100644
+--- a/src/_pytest/pastebin.py
++++ b/src/_pytest/pastebin.py
+@@ -79,7 +79,7 @@ def create_new_paste(contents):
+ 
+     params = {
+         "code": contents,
+-        "lexer": "python3" if sys.version_info[0] >= 3 else "python",
++        "lexer": "text",
+         "expiry": "1week",
+     }
+     url = "https://bpaste.net"
+@@ -88,7 +88,7 @@ def create_new_paste(contents):
+     if m:
+         return "%s/show/%s" % (url, m.group(1))
+     else:
+-        return "bad response: " + response
++        return "bad response: " + response.decode("utf-8")
+ 
+ 
+ def pytest_terminal_summary(terminalreporter):
+diff --git a/test_lexer_issue.py b/test_lexer_issue.py
+new file mode 100644
+index 000000000..a34a11af5
+--- /dev/null
++++ b/test_lexer_issue.py
+@@ -0,0 +1,47 @@
++#!/usr/bin/env python
++"""Script to reproduce the pastebin lexer issue."""
++
++import sys
++import urllib.parse
++from urllib.request import urlopen
++
++# Read the data.txt file
++with open('/testbed/data.txt', 'rb') as f:
++    data = f.read()
++
++print(f"Data length: {len(data)} bytes")
++print(f"Data preview: {data[:100]}...")
++
++# The data.txt file contains already URL-encoded data
++# Let's decode it to see what it contains
++decoded = urllib.parse.unquote_to_bytes(data.decode('ascii'))
++print(f"\nDecoded length: {len(decoded)} bytes")
++print(f"Decoded preview: {decoded[:200]}...")
++
++# Now let's test with the actual create_new_paste function
++sys.path.insert(0, '/testbed/src')
++from _pytest.pastebin import create_new_paste
++
++print("\n\nTesting create_new_paste with the problematic content...")
++try:
++    # The create_new_paste function expects utf-8 encoded bytes
++    # The decoded data from data.txt is already bytes
++    result = create_new_paste(decoded)
++    print(f"Result: {result}")
++except Exception as e:
++    print(f"Error: {e}")
++    import traceback
++    traceback.print_exc()
++
++# Let's also test with a simpler example
++print("\n\nTesting with a simpler example...")
++simple_content = b"test session starts =======================================================\nplatform linux -- Python 3.7.4, pytest-5.1.2, py-1.8.0, pluggy-0.13.0\nrootdir: /home/user/project\ncollected 1 item\n\ntest_file.py F                                                              [100%]\n\n======================================================= FAILURES ========================================================\n______________________________________________________ test_example ______________________________________________________\n\n    def test_example():\n>       assert 1 == 2\nE       assert 1 == 2\n\ntest_file.py:2: AssertionError\n====================================================== 1 failed in 0.02s ======================================================="
++
++print(f"Simple content length: {len(simple_content)} bytes")
++try:
++    result = create_new_paste(simple_content)
++    print(f"Result: {result}")
++except Exception as e:
++    print(f"Error: {e}")
++    import traceback
++    traceback.print_exc()
+\ No newline at end of file
+diff --git a/test_pastebin_issue.py b/test_pastebin_issue.py
+new file mode 100644
+index 000000000..19258523e
+--- /dev/null
++++ b/test_pastebin_issue.py
+@@ -0,0 +1,64 @@
++#!/usr/bin/env python
++"""Script to reproduce the pastebin lexer issue."""
++
++import sys
++import tempfile
++from urllib.request import urlopen
++from urllib.parse import urlencode
++
++# First, let's test the exact example from the PR description
++print("Testing with data.txt from PR description...")
++# Create a test file with problematic content
++test_content = b"""test session starts =======================================================
++platform linux -- Python 3.7.4, pytest-5.1.2, py-1.8.0, pluggy-0.13.0
++rootdir: /home/user/project
++collected 1 item
++
++test_file.py F                                                              [100%]
++
++======================================================= FAILURES ========================================================
++______________________________________________________ test_example ______________________________________________________
++
++    def test_example():
++>       assert 1 == 2
++E       assert 1 == 2
++
++test_file.py:2: AssertionError
++====================================================== 1 failed in 0.02s ======================================================="""
++
++# Test with python3 lexer (current behavior)
++params = {
++    "code": test_content,
++    "lexer": "python3",
++    "expiry": "1week",
++}
++url = "https://bpaste.net"
++
++print(f"Testing with lexer='python3'...")
++try:
++    response = urlopen(url, data=urlencode(params).encode("ascii")).read()
++    print("Success with lexer='python3'")
++except Exception as e:
++    print(f"Error with lexer='python3': {e}")
++
++# Test with text lexer (proposed fix)
++params["lexer"] = "text"
++print(f"\nTesting with lexer='text'...")
++try:
++    response = urlopen(url, data=urlencode(params).encode("ascii")).read()
++    print("Success with lexer='text'")
++except Exception as e:
++    print(f"Error with lexer='text': {e}")
++
++# Now let's test the actual pastebin function from pytest
++print("\n\nTesting the actual create_new_paste function...")
++sys.path.insert(0, '/testbed/src')
++from _pytest.pastebin import create_new_paste
++
++# Create a test with content that might trigger the issue
++print(f"Testing create_new_paste with problematic content...")
++try:
++    result = create_new_paste(test_content)
++    print(f"Result: {result}")
++except Exception as e:
++    print(f"Error: {e}")
+\ No newline at end of file
+diff --git a/testing/test_pastebin.py b/testing/test_pastebin.py
+index bac8f9802..aac0b651e 100644
+--- a/testing/test_pastebin.py
++++ b/testing/test_pastebin.py
+@@ -126,8 +126,7 @@ class TestPaste(object):
+         assert len(mocked_urlopen) == 1
+         url, data = mocked_urlopen[0]
+         assert type(data) is bytes
+-        lexer = "python3" if sys.version_info[0] >= 3 else "python"
+         assert url == "https://bpaste.net"
+-        assert "lexer=%s" % lexer in data.decode()
++        assert "lexer=text" in data.decode()
+         assert "code=full-paste-contents" in data.decode()
+         assert "expiry=1week" in data.decode()

@@ -1,0 +1,15 @@
+diff --git a/reproduce_issue.py b/reproduce_issue.py
+new file mode 100644
+index 000000000..c59064e75
+--- /dev/null
++++ b/reproduce_issue.py
+@@ -0,0 +1,8 @@
++import pytest
++
++@pytest.mark.parametrize("a", ["..["])
++def test_boo(a):
++    assert 0
++
++if __name__ == "__main__":
++    pytest.main([__file__, "-v"])
+\ No newline at end of file

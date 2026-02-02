@@ -1,0 +1,82 @@
+diff --git a/classes.dot b/classes.dot
+new file mode 100644
+index 00000000..da35b12c
+--- /dev/null
++++ b/classes.dot
+@@ -0,0 +1,7 @@
++digraph "classes" {
++charset="utf-8"
++rankdir=BT
++"0" [label="{C|a : NoneType\l|}", shape="record"];
++"1" [label="{D|b : int\lc : NoneType\l|}", shape="record"];
++"2" [label="{E|\l|method(x, y)\l}", shape="record"];
++}
+diff --git a/test_type_hints.py b/test_type_hints.py
+new file mode 100644
+index 00000000..e78c6c27
+--- /dev/null
++++ b/test_type_hints.py
+@@ -0,0 +1,62 @@
++#!/usr/bin/env python3
++"""Test script to reproduce the type hints issue with pyreverse"""
++
++import os
++import tempfile
++import subprocess
++import sys
++
++# Create a test file with type hints
++test_code = '''
++class C(object):
++    def __init__(self, a: str = None):
++        self.a = a
++
++class D:
++    def __init__(self, b: int = 0, c: list = None):
++        self.b = b
++        self.c = c
++        
++class E:
++    def method(self, x: str, y: int = 5) -> bool:
++        return True
++'''
++
++# Write test file
++with tempfile.NamedTemporaryFile(mode='w', suffix='.py', delete=False) as f:
++    f.write(test_code)
++    test_file = f.name
++
++try:
++    # Run pyreverse on the test file
++    print(f"Running pyreverse on {test_file}")
++    print("Test code:")
++    print(test_code)
++    print("\n" + "="*80 + "\n")
++    
++    # Run pyreverse with dot output
++    result = subprocess.run(
++        [sys.executable, "pylint/pyreverse/main.py", test_file, "-o", "dot"],
++        capture_output=True,
++        text=True
++    )
++    
++    print("pyreverse output:")
++    print(result.stdout)
++    if result.stderr:
++        print("stderr:", result.stderr)
++    
++    # Check if dot files were created
++    dot_files = ["classes_classes.dot", "packages_classes.dot"]
++    for dot_file in dot_files:
++        if os.path.exists(dot_file):
++            print(f"\nContents of {dot_file}:")
++            with open(dot_file, 'r') as f:
++                print(f.read())
++            os.remove(dot_file)
++        else:
++            print(f"\n{dot_file} not found")
++            
++finally:
++    # Clean up
++    os.unlink(test_file)
+\ No newline at end of file

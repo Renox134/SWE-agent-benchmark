@@ -1,0 +1,44 @@
+diff --git a/pylint/lint/pylinter.py b/pylint/lint/pylinter.py
+index 53345a6b..b8bcaaf1 100644
+--- a/pylint/lint/pylinter.py
++++ b/pylint/lint/pylinter.py
+@@ -564,8 +564,9 @@ class PyLinter(
+             if not msg.may_be_emitted():
+                 self._msgs_state[msg.msgid] = False
+ 
+-    @staticmethod
+-    def _discover_files(files_or_modules: Sequence[str]) -> Iterator[str]:
++    def _discover_files(
++        self, files_or_modules: Sequence[str]
++    ) -> Iterator[str]:
+         """Discover python modules and packages in sub-directory.
+ 
+         Returns iterator of paths to discovered modules and packages.
+@@ -576,6 +577,15 @@ class PyLinter(
+             ):
+                 skip_subtrees: list[str] = []
+                 for root, _, files in os.walk(something):
++                    # Check if the current directory should be ignored
++                    basename = os.path.basename(root)
++                    if (
++                        basename in self.config.ignore
++                        or any(pattern.match(basename) for pattern in self.config.ignore_patterns)
++                        or any(pattern.match(root) for pattern in self.config.ignore_paths)
++                    ):
++                        continue
++                    
+                     if any(root.startswith(s) for s in skip_subtrees):
+                         # Skip subtree of already discovered package.
+                         continue
+@@ -587,6 +597,11 @@ class PyLinter(
+                             os.path.join(root, file)
+                             for file in files
+                             if file.endswith(".py")
++                            and not (
++                                file in self.config.ignore
++                                or any(pattern.match(file) for pattern in self.config.ignore_patterns)
++                                or any(pattern.match(os.path.join(root, file)) for pattern in self.config.ignore_paths)
++                            )
+                         )
+             else:
+                 yield something

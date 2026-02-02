@@ -1,0 +1,25 @@
+diff --git a/reproduce_issue.py b/reproduce_issue.py
+new file mode 100644
+index 00000000..418b0fcb
+--- /dev/null
++++ b/reproduce_issue.py
+@@ -0,0 +1,18 @@
++import xarray as xr
++
++# Load the tutorial dataset
++ds = xr.tutorial.load_dataset("air_temperature")
++
++print("Original time attributes:")
++print(ds.time.attrs)
++print()
++
++# Test xr.where with keep_attrs=True
++result = xr.where(True, ds.air, ds.air, keep_attrs=True)
++print("Result time attributes after xr.where:")
++print(result.time.attrs)
++print()
++
++# Expected time attributes
++print("Expected time attributes:")
++print({'standard_name': 'time', 'long_name': 'Time'})
+\ No newline at end of file

@@ -1,0 +1,44 @@
+instances_by_exit_status:
+    Uncaught UnicodeEncodeError:
+    - pytest-dev__pytest-5262
+    - pylint-dev__pylint-6903
+    - pylint-dev__pylint-7080
+    - pytest-dev__pytest-6197
+    exit_error:
+    - pytest-dev__pytest-7982
+    exit_format:
+    - pylint-dev__pylint-4970
+    - pylint-dev__pylint-6528
+    - pytest-dev__pytest-7521
+    submitted:
+    - pytest-dev__pytest-5631
+    submitted (exit_error):
+    - pytest-dev__pytest-10356
+    submitted (exit_format):
+    - pydata__xarray-7393
+    - pydata__xarray-7229
+    - pydata__xarray-6992
+    - pylint-dev__pylint-4604
+    - pydata__xarray-6938
+    - pylint-dev__pylint-4551
+    - pydata__xarray-7233
+    - pylint-dev__pylint-4661
+    - pylint-dev__pylint-6386
+    - pytest-dev__pytest-10051
+    - pylint-dev__pylint-8898
+    - pytest-dev__pytest-10081
+    - pylint-dev__pylint-7277
+    - pytest-dev__pytest-5787
+    - pytest-dev__pytest-5840
+    - pytest-dev__pytest-6202
+    - pytest-dev__pytest-7324
+    - pytest-dev__pytest-7432
+    - pytest-dev__pytest-7205
+    - pytest-dev__pytest-7490
+    - pytest-dev__pytest-5809
+    - pytest-dev__pytest-7236
+    - pytest-dev__pytest-7571
+    - pytest-dev__pytest-8399
+    - scikit-learn__scikit-learn-10297
+    - scikit-learn__scikit-learn-10844
+total_cost: 9.698181000000005

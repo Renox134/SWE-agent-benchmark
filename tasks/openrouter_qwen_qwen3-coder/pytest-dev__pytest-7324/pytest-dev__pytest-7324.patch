@@ -1,0 +1,59 @@
+diff --git a/src/_pytest/main.py b/src/_pytest/main.py
+index 3c205027d..eea8196c3 100644
+--- a/src/_pytest/main.py
++++ b/src/_pytest/main.py
+@@ -564,13 +564,9 @@ class Session(nodes.FSCollector):
+             # Module itself, so just use that. If this special case isn't taken, then all
+             # the files in the package will be yielded.
+             if argpath.basename == "__init__.py":
+-                try:
+-                    yield next(m[0].collect())
+-                except StopIteration:
+-                    # The package collects nothing with only an __init__.py
+-                    # file in it, which gets ignored by the default
+-                    # "python_files" option.
+-                    pass
++                collected = m[0].collect()
++                if collected:
++                    yield from collected
+                 return
+             yield from m
+ 
+diff --git a/src/_pytest/python.py b/src/_pytest/python.py
+index 306e5f217..6810bed6d 100644
+--- a/src/_pytest/python.py
++++ b/src/_pytest/python.py
+@@ -176,9 +176,20 @@ def pytest_pyfunc_call(pyfuncitem):
+ def pytest_collect_file(path, parent):
+     ext = path.ext
+     if ext == ".py":
+-        if not parent.session.isinitpath(path):
+-            if not path_matches_patterns(
+-                path, parent.config.getini("python_files") + ["__init__.py"]
++        # If the path is explicitly specified by the user, collect it
++        if parent.session.isinitpath(path):
++            # Collect explicitly specified paths
++            pass
++        else:
++            # For __init__.py files, only collect them if they match the python_files pattern
++            if path.basename == "__init__.py":
++                if not path_matches_patterns(
++                    path, parent.config.getini("python_files")
++                ):
++                    return
++            # For other .py files, collect them if they match the python_files pattern
++            elif not path_matches_patterns(
++                path, parent.config.getini("python_files")
+             ):
+                 return
+         ihook = parent.session.gethookproxy(path)
+@@ -192,6 +203,9 @@ def path_matches_patterns(path, patterns):
+ 
+ def pytest_pycollect_makemodule(path, parent):
+     if path.basename == "__init__.py":
++        # If the path is explicitly specified by the user, treat it as a Module
++        if parent.session.isinitpath(path):
++            return Module(path, parent)
+         return Package(path, parent)
+     return Module(path, parent)
+ 

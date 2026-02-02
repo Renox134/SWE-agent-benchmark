@@ -1,0 +1,117 @@
+diff --git a/mytest.py b/mytest.py
+new file mode 100644
+index 00000000..11b15b1a
+--- /dev/null
++++ b/mytest.py
+@@ -0,0 +1 @@
++print("hello")
+diff --git a/test_simple_verbose.py b/test_simple_verbose.py
+new file mode 100644
+index 00000000..3b729c87
+--- /dev/null
++++ b/test_simple_verbose.py
+@@ -0,0 +1,50 @@
++#!/usr/bin/env python3
++import subprocess
++import sys
++
++# Create a simple test file
++with open('/testbed/mytest.py', 'w') as f:
++    f.write('print("hello")\n')
++
++# Test 1: Test with --verbose (should work)
++print("Test 1: Testing --verbose")
++try:
++    result = subprocess.run([sys.executable, '-m', 'pylint', '--verbose', '/testbed/mytest.py'], 
++                          capture_output=True, text=True)
++    print(f"Exit code: {result.returncode}")
++    if result.returncode != 0:
++        print(f"Error: {result.stderr[:200]}")
++    else:
++        print("Success: --verbose works")
++except Exception as e:
++    print(f"Exception: {e}")
++
++print("\n" + "="*80 + "\n")
++
++# Test 2: Test with -v (should fail according to bug report)
++print("Test 2: Testing -v")
++try:
++    result = subprocess.run([sys.executable, '-m', 'pylint', '-v', '/testbed/mytest.py'], 
++                          capture_output=True, text=True)
++    print(f"Exit code: {result.returncode}")
++    if result.returncode != 0:
++        print(f"Error: {result.stderr[:200]}")
++    else:
++        print("Success: -v works")
++except Exception as e:
++    print(f"Exception: {e}")
++
++print("\n" + "="*80 + "\n")
++
++# Test 3: Test with -v without file (should fail according to bug report)
++print("Test 3: Testing -v without file")
++try:
++    result = subprocess.run([sys.executable, '-m', 'pylint', '-v'], 
++                          capture_output=True, text=True)
++    print(f"Exit code: {result.returncode}")
++    if result.returncode != 0:
++        print(f"Error: {result.stderr[:200]}")
++    else:
++        print("Success: -v works")
++except Exception as e:
++    print(f"Exception: {e}")
+\ No newline at end of file
+diff --git a/test_verbose.py b/test_verbose.py
+new file mode 100644
+index 00000000..515213e6
+--- /dev/null
++++ b/test_verbose.py
+@@ -0,0 +1,46 @@
++#!/usr/bin/env python3
++import subprocess
++import sys
++
++# Test 1: Test with --verbose (should work)
++print("Test 1: Testing --verbose")
++try:
++    result = subprocess.run([sys.executable, '-m', 'pylint', '--verbose', '--help'], 
++                          capture_output=True, text=True)
++    print(f"Exit code: {result.returncode}")
++    if result.returncode != 0:
++        print(f"Error: {result.stderr}")
++    else:
++        print("Success: --verbose works")
++except Exception as e:
++    print(f"Exception: {e}")
++
++print("\n" + "="*80 + "\n")
++
++# Test 2: Test with -v (should fail according to bug report)
++print("Test 2: Testing -v")
++try:
++    result = subprocess.run([sys.executable, '-m', 'pylint', '-v', '--help'], 
++                          capture_output=True, text=True)
++    print(f"Exit code: {result.returncode}")
++    if result.returncode != 0:
++        print(f"Error: {result.stderr}")
++    else:
++        print("Success: -v works")
++except Exception as e:
++    print(f"Exception: {e}")
++
++print("\n" + "="*80 + "\n")
++
++# Test 3: Test with -v without --help (should fail according to bug report)
++print("Test 3: Testing -v without --help")
++try:
++    result = subprocess.run([sys.executable, '-m', 'pylint', '-v'], 
++                          capture_output=True, text=True)
++    print(f"Exit code: {result.returncode}")
++    if result.returncode != 0:
++        print(f"Error: {result.stderr}")
++    else:
++        print("Success: -v works")
++except Exception as e:
++    print(f"Exception: {e}")
+\ No newline at end of file

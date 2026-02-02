@@ -1,0 +1,75 @@
+diff --git a/reproduce_issue.py b/reproduce_issue.py
+new file mode 100644
+index 000000000..57e7ee44a
+--- /dev/null
++++ b/reproduce_issue.py
+@@ -0,0 +1,68 @@
++#!/usr/bin/env python
++"""Reproduce the Windows import folder casing issue."""
++
++import os
++import sys
++import tempfile
++import shutil
++from pathlib import Path
++
++# Create a test directory structure
++test_dir = Path(tempfile.mkdtemp())
++print(f"Test directory: {test_dir}")
++
++# Create directory structure similar to the issue
++# C:\Azure\KMS\ComponentTest\Python\PIsys
++python_dir = test_dir / "Python"
++pisys_dir = python_dir / "PIsys"
++python_dir.mkdir()
++pisys_dir.mkdir()
++
++# Create a conftest.py file
++conftest_content = '''
++import sys
++print(f"Loading conftest from: {__file__}")
++print(f"sys.path contains: {sys.path}")
++'''
++(pisys_dir / "conftest.py").write_text(conftest_content)
++
++# Create a test file
++test_content = '''
++def test_example():
++    assert True
++'''
++(pisys_dir / "test_example.py").write_text(test_content)
++
++# Create __init__.py to make it a package
++(pisys_dir / "__init__.py").write_text("")
++
++# Now test the unique_path function
++from _pytest.pathlib import unique_path
++import py
++
++# Create a py.path.local object with mixed case
++test_path = py.path.local(str(pisys_dir / "conftest.py"))
++print(f"\nOriginal path: {test_path}")
++print(f"Original path (str): {str(test_path)}")
++
++# Apply unique_path
++unique = unique_path(test_path)
++print(f"\nAfter unique_path: {unique}")
++print(f"After unique_path (str): {str(unique)}")
++
++# Check if normcase changes the path
++print(f"\nos.path.normcase(str(test_path)): {os.path.normcase(str(test_path))}")
++
++# Test on Windows-like path
++if sys.platform == "win32":
++    # Simulate the issue from the PR
++    windows_path = py.path.local(r"C:\Azure\KMS\ComponentTest\Python\PIsys\conftest.py")
++    print(f"\nWindows path: {windows_path}")
++    print(f"After unique_path: {unique_path(windows_path)}")
++    print(f"Normcase result: {os.path.normcase(str(windows_path))}")
++else:
++    # On Unix, we can still test with a path
++    print(f"\nOn Unix, normcase doesn't change case: {os.path.normcase('/TEST/PATH')}")
++
++# Clean up
++shutil.rmtree(test_dir)
+\ No newline at end of file

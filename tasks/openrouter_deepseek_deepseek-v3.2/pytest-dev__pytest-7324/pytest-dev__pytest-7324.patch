@@ -1,0 +1,94 @@
+diff --git a/reproduce_issue.py b/reproduce_issue.py
+new file mode 100644
+index 000000000..b6a9f83f6
+--- /dev/null
++++ b/reproduce_issue.py
+@@ -0,0 +1,23 @@
++#!/usr/bin/env python
++from _pytest.mark.expression import Expression
++
++print("Testing Expression.compile('False')")
++try:
++    expr = Expression.compile("False")
++    print(f"Successfully compiled: {expr}")
++except Exception as e:
++    print(f"Error: {type(e).__name__}: {e}")
++
++print("\nTesting Expression.compile('True')")
++try:
++    expr = Expression.compile("True")
++    print(f"Successfully compiled: {expr}")
++except Exception as e:
++    print(f"Error: {type(e).__name__}: {e}")
++
++print("\nTesting Expression.compile('None')")
++try:
++    expr = Expression.compile("None")
++    print(f"Successfully compiled: {expr}")
++except Exception as e:
++    print(f"Error: {type(e).__name__}: {e}")
+\ No newline at end of file
+diff --git a/reproduce_issue2.py b/reproduce_issue2.py
+new file mode 100644
+index 000000000..2f559724f
+--- /dev/null
++++ b/reproduce_issue2.py
+@@ -0,0 +1,57 @@
++#!/usr/bin/env python
++import ast
++import sys
++from _pytest.mark.expression import Expression
++
++print(f"Python version: {sys.version}")
++print(f"Python implementation: {sys.implementation.name}")
++
++# Let's trace through what happens in Expression.compile
++input_str = "False"
++print(f"\nProcessing input: '{input_str}'")
++
++# First, let's see what the scanner produces
++from _pytest.mark.expression import Scanner, TokenType
++scanner = Scanner(input_str)
++print("Tokens:")
++while True:
++    token = scanner.current
++    print(f"  {token.type}: '{token.value}' at pos {token.pos}")
++    if token.type == TokenType.EOF:
++        break
++    scanner.current = next(scanner.tokens)
++
++# Now let's see what the AST looks like
++print("\nAST generation:")
++scanner = Scanner(input_str)
++try:
++    from _pytest.mark.expression import expression
++    ast_expr = expression(scanner)
++    print(f"AST: {ast.dump(ast_expr)}")
++except Exception as e:
++    print(f"Error generating AST: {type(e).__name__}: {e}")
++
++# Try to compile the AST directly
++print("\nDirect AST compilation:")
++try:
++    # Create an AST for "False" as a Name node (what the current code does)
++    name_node = ast.Name("False", ast.Load())
++    expr_node = ast.Expression(name_node)
++    ast.fix_missing_locations(expr_node)
++    print(f"AST for Name('False'): {ast.dump(expr_node)}")
++    code = compile(expr_node, filename="<test>", mode="eval")
++    print(f"Compiled successfully: {code}")
++except Exception as e:
++    print(f"Error compiling Name('False'): {type(e).__name__}: {e}")
++
++# Compare with Constant node
++print("\nAST with Constant node:")
++try:
++    const_node = ast.Constant(False)
++    expr_node = ast.Expression(const_node)
++    ast.fix_missing_locations(expr_node)
++    print(f"AST for Constant(False): {ast.dump(expr_node)}")
++    code = compile(expr_node, filename="<test>", mode="eval")
++    print(f"Compiled successfully: {code}")
++except Exception as e:
++    print(f"Error compiling Constant(False): {type(e).__name__}: {e}")
+\ No newline at end of file

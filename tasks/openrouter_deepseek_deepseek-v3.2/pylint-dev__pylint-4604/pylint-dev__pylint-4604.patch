@@ -1,0 +1,116 @@
+diff --git a/debug_error.py b/debug_error.py
+new file mode 100644
+index 00000000..15537bd9
+--- /dev/null
++++ b/debug_error.py
+@@ -0,0 +1,47 @@
++import xarray as xr
++
++print("Testing the MVCE from the PR description...")
++try:
++    ds = xr.Dataset(coords={"a": ("x", [1, 2, 3]), "b": ("x", ['a', 'b', 'c'])})
++    print(f"Original dataset: {ds}")
++    print(f"_variables: {ds._variables}")
++    print(f"_coord_names: {ds._coord_names}")
++    print(f"len(_variables): {len(ds._variables)}")
++    print(f"len(_coord_names): {len(ds._coord_names)}")
++    print(f"len(ds.data_vars): {len(ds.data_vars)}")
++    
++    ds_with_index = ds.set_index(z=['a', 'b'])
++    print(f"\nDataset with index: {ds_with_index}")
++    print(f"_variables: {ds_with_index._variables}")
++    print(f"_coord_names: {ds_with_index._coord_names}")
++    print(f"len(_variables): {len(ds_with_index._variables)}")
++    print(f"len(_coord_names): {len(ds_with_index._coord_names)}")
++    print(f"len(ds.data_vars): {len(ds_with_index.data_vars)}")
++    
++    result = ds_with_index.reset_index("z", drop=True)
++    print(f"\nAfter reset_index with drop=True:")
++    print(f"_variables: {result._variables}")
++    print(f"_coord_names: {result._coord_names}")
++    print(f"len(_variables): {len(result._variables)}")
++    print(f"len(_coord_names): {len(result._coord_names)}")
++    print(f"len(ds.data_vars): {len(result.data_vars)}")
++    
++    # Let's manually check what happens in DataVariables.__len__
++    print(f"\nManual calculation of len(data_vars):")
++    print(f"len(_variables) - len(_coord_names) = {len(result._variables)} - {len(result._coord_names)} = {len(result._variables) - len(result._coord_names)}")
++    
++    # Let's check what's actually in each
++    print(f"\nVariables in _variables but not in _coord_names:")
++    for key in result._variables:
++        if key not in result._coord_names:
++            print(f"  {key}")
++    
++    print(f"\nVariables in _coord_names but not in _variables:")
++    for key in result._coord_names:
++        if key not in result._variables:
++            print(f"  {key}")
++            
++except Exception as e:
++    print(f"Error: {type(e).__name__}: {e}")
++    import traceback
++    traceback.print_exc()
+\ No newline at end of file
+diff --git a/reproduce_error.py b/reproduce_error.py
+new file mode 100644
+index 00000000..08672a74
+--- /dev/null
++++ b/reproduce_error.py
+@@ -0,0 +1,55 @@
++import xarray as xr
++
++print("Testing the MVCE from the PR description...")
++try:
++    ds = xr.Dataset(coords={"a": ("x", [1, 2, 3]), "b": ("x", ['a', 'b', 'c'])})
++    result = ds.set_index(z=['a', 'b']).reset_index("z", drop=True)
++    print("Success! Result:")
++    print(result)
++except Exception as e:
++    print(f"Error: {type(e).__name__}: {e}")
++    import traceback
++    traceback.print_exc()
++
++print("\nLet's also test some edge cases...")
++print("\n1. Testing regular dataset:")
++try:
++    ds = xr.Dataset({"temp": ("x", [1, 2, 3])}, coords={"x": [1, 2, 3]})
++    print(f"Dataset: {ds}")
++    print(f"_variables: {ds._variables}")
++    print(f"_coord_names: {ds._coord_names}")
++    print(f"len(_variables): {len(ds._variables)}")
++    print(f"len(_coord_names): {len(ds._coord_names)}")
++    print(f"len(ds.data_vars): {len(ds.data_vars)}")
++except Exception as e:
++    print(f"Error: {type(e).__name__}: {e}")
++
++print("\n2. Testing dataset with multi-index:")
++try:
++    ds = xr.Dataset(coords={"a": ("x", [1, 2, 3]), "b": ("x", ['a', 'b', 'c'])})
++    print(f"Original dataset: {ds}")
++    print(f"_variables: {ds._variables}")
++    print(f"_coord_names: {ds._coord_names}")
++    print(f"len(_variables): {len(ds._variables)}")
++    print(f"len(_coord_names): {len(ds._coord_names)}")
++    print(f"len(ds.data_vars): {len(ds.data_vars)}")
++    
++    ds_with_index = ds.set_index(z=['a', 'b'])
++    print(f"\nDataset with index: {ds_with_index}")
++    print(f"_variables: {ds_with_index._variables}")
++    print(f"_coord_names: {ds_with_index._coord_names}")
++    print(f"len(_variables): {len(ds_with_index._variables)}")
++    print(f"len(_coord_names): {len(ds_with_index._coord_names)}")
++    print(f"len(ds.data_vars): {len(ds_with_index.data_vars)}")
++    
++    result = ds_with_index.reset_index("z", drop=True)
++    print(f"\nAfter reset_index with drop=True: {result}")
++    print(f"_variables: {result._variables}")
++    print(f"_coord_names: {result._coord_names}")
++    print(f"len(_variables): {len(result._variables)}")
++    print(f"len(_coord_names): {len(result._coord_names)}")
++    print(f"len(ds.data_vars): {len(result.data_vars)}")
++except Exception as e:
++    print(f"Error: {type(e).__name__}: {e}")
++    import traceback
++    traceback.print_exc()
+\ No newline at end of file

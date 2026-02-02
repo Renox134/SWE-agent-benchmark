@@ -1,0 +1,517 @@
+diff --git a/debug_test.py b/debug_test.py
+new file mode 100644
+index 00000000..7aca3328
+--- /dev/null
++++ b/debug_test.py
+@@ -0,0 +1,95 @@
++#!/usr/bin/env python3
++
++"""
++Script to debug the issue with min-similarity-lines=1
++"""
++
++import tempfile
++import os
++from pylint.lint import PyLinter
++from pylint.checkers import similar
++from pylint.testutils import GenericTestReporter as Reporter
++
++def debug_min_similarity_lines():
++    """Debug what happens with min-similarity-lines=1"""
++    # Create two identical files with more content
++    content = """
++def func1():
++    # This is a comment
++    x = 1
++    y = 2
++    z = 3
++    a = 4
++    b = 5
++    c = 6
++    return x + y + z + a + b + c
++
++def func2():
++    # This is a comment
++    x = 1
++    y = 2
++    z = 3
++    a = 4
++    b = 5
++    c = 6
++    return x + y + z + a + b + c
++"""
++    
++    with tempfile.NamedTemporaryFile(mode='w', suffix='.py', delete=False) as f1:
++        f1.write(content)
++        file1 = f1.name
++    
++    with tempfile.NamedTemporaryFile(mode='w', suffix='.py', delete=False) as f2:
++        f2.write(content)
++        file2 = f2.name
++    
++    try:
++        # Test with min-similarity-lines=1
++        print("Testing with min-similarity-lines=1:")
++        linter = PyLinter(reporter=Reporter())
++        checker = similar.SimilarChecker(linter)
++        linter.register_checker(checker)
++        print(f"Before set_option: checker.min_lines = {checker.min_lines}")
++        print(f"Before set_option: checker.config.min_similarity_lines = {checker.config.min_similarity_lines}")
++        checker.set_option("min-similarity-lines", 1)
++        print(f"After set_option: checker.min_lines = {checker.min_lines}")
++        print(f"After set_option: checker.config.min_similarity_lines = {checker.config.min_similarity_lines}")
++        
++        # Check the files
++        linter.check([file1, file2])
++        
++        # Check if any duplicate code messages were reported
++        print(f"DEBUG: Reporter has {len(linter.reporter.messages)} messages")
++        for i, msg in enumerate(linter.reporter.messages):
++            print(f"DEBUG: Message {i}: {msg}")
++        messages = linter.reporter.messages
++        duplicate_messages = [msg for msg in messages if "Similar lines" in str(msg)]
++        
++        print(f"Number of duplicate-code messages: {len(duplicate_messages)}")
++        for msg in duplicate_messages:
++            print(f"Message: {msg}")
++            
++        # Let's also check the internal state
++        print(f"Checker min_lines: {checker.min_lines}")
++        print(f"Number of linesets: {len(checker.linesets)}")
++        if len(checker.linesets) >= 2:
++            print(f"Lineset 1 length: {len(checker.linesets[0])}")
++            print(f"Lineset 2 length: {len(checker.linesets[1])}")
++            
++        # Let's see what _compute_sims returns
++        sims = checker._compute_sims()
++        print(f"Number of similarities found: {len(sims)}")
++        for num, couples in sims:
++            print(f"Similarity with {num} lines:")
++            for lineset, start, end in couples:
++                print(f"  File: {lineset.name}, lines {start}-{end}")
++            
++        return True
++            
++    finally:
++        # Clean up temporary files
++        os.unlink(file1)
++        os.unlink(file2)
++
++if __name__ == "__main__":
++    debug_min_similarity_lines()
+\ No newline at end of file
+diff --git a/pylint/checkers/similar.py b/pylint/checkers/similar.py
+index c65b1c89..456fd841 100644
+--- a/pylint/checkers/similar.py
++++ b/pylint/checkers/similar.py
+@@ -394,6 +394,7 @@ class Similar:
+ 
+     def _compute_sims(self) -> List[Tuple[int, Set[LinesChunkLimits_T]]]:
+         """compute similarities in appended files"""
++        print(f"DEBUG: _compute_sims called with min_lines={self.min_lines}")
+         no_duplicates: Dict[int, List[Set[LinesChunkLimits_T]]] = defaultdict(list)
+ 
+         for commonality in self._iter_sims():
+@@ -467,7 +468,7 @@ class Similar:
+         This the core of the algorithm.
+         The idea is to compute the hashes of a minimal number of successive lines of each lineset and then compare the hashes.
+         Every match of such comparison is stored in a dict that links the couple of starting indices in both linesets to
+-        the couple of corresponding starting and ending lines in both files.
++        the couple of corresponding starting and ending number lines in both files.
+         Last regroups all successive couples in a bigger one. It allows to take into account common chunk of lines that have more
+         than the minimal number of successive lines required.
+         """
+@@ -524,7 +525,7 @@ class Similar:
+                 lineset1, start_index_1, lineset2, start_index_2, nb_common_lines
+             )
+ 
+-            if eff_cmn_nb > self.min_lines:
++            if self.min_lines > 0 and eff_cmn_nb >= self.min_lines:
+                 yield com
+ 
+     def _iter_sims(self) -> Generator[Commonality, None, None]:
+@@ -857,8 +858,11 @@ class SimilarChecker(BaseChecker, Similar, MapReduceMixin):
+         """Reduces and recombines data into a format that we can report on
+ 
+         The partner function of get_map_data()"""
++        print(f"DEBUG: reduce_map_data called with self.min_lines={self.min_lines}")
+         recombined = SimilarChecker(linter)
++        print(f"DEBUG: recombined.min_lines after init={recombined.min_lines}")
+         recombined.min_lines = self.min_lines
++        print(f"DEBUG: recombined.min_lines after assignment={recombined.min_lines}")
+         recombined.ignore_comments = self.ignore_comments
+         recombined.ignore_docstrings = self.ignore_docstrings
+         recombined.ignore_imports = self.ignore_imports
+diff --git a/reproduce_issue.py b/reproduce_issue.py
+new file mode 100644
+index 00000000..f4d61bf5
+--- /dev/null
++++ b/reproduce_issue.py
+@@ -0,0 +1,72 @@
++#!/usr/bin/env python3
++
++"""
++Script to reproduce the issue with min-similarity-lines=0
++"""
++
++import tempfile
++import os
++import sys
++from pylint.checkers import similar
++from io import StringIO
++from contextlib import redirect_stdout
++
++def test_min_similarity_lines_zero():
++    """Test that setting min-similarity-lines to 0 disables duplicate code checking"""
++    # Create two identical files
++    content = """
++def func1():
++    x = 1
++    y = 2
++    return x + y
++
++def func2():
++    x = 1
++    y = 2
++    return x + y
++"""
++    
++    with tempfile.NamedTemporaryFile(mode='w', suffix='.py', delete=False) as f1:
++        f1.write(content)
++        file1 = f1.name
++    
++    with tempfile.NamedTemporaryFile(mode='w', suffix='.py', delete=False) as f2:
++        f2.write(content)
++        file2 = f2.name
++    
++    try:
++        # Test with duplicates=0 using command line
++        print("Testing with duplicates=0:")
++        output = StringIO()
++        with redirect_stdout(output):
++            try:
++                similar.Run(["--duplicates=0", file1, file2])
++            except SystemExit as e:
++                if e.code != 0:
++                    print(f"ERROR: Command failed with exit code {e.code}")
++                    return False
++        print("Output with duplicates=0:")
++        print(output.getvalue())
++        
++        # Test with duplicates=4 (default) to see if it detects duplicates
++        print("\nTesting with duplicates=4 (default):")
++        output = StringIO()
++        with redirect_stdout(output):
++            try:
++                similar.Run(["--duplicates=4", file1, file2])
++            except SystemExit as e:
++                if e.code != 0:
++                    print(f"ERROR: Command failed with exit code {e.code}")
++                    return False
++        print("Output with duplicates=4:")
++        print(output.getvalue())
++        
++        return True
++            
++    finally:
++        # Clean up temporary files
++        os.unlink(file1)
++        os.unlink(file2)
++
++if __name__ == "__main__":
++    test_min_similarity_lines_zero()
+\ No newline at end of file
+diff --git a/test_rcfile.ini b/test_rcfile.ini
+new file mode 100644
+index 00000000..19393d7b
+--- /dev/null
++++ b/test_rcfile.ini
+@@ -0,0 +1,2 @@
++[tool:pylint]
++min-similarity-lines=0
+\ No newline at end of file
+diff --git a/test_rcfile.py b/test_rcfile.py
+new file mode 100644
+index 00000000..c7576c12
+--- /dev/null
++++ b/test_rcfile.py
+@@ -0,0 +1,70 @@
++#!/usr/bin/env python3
++
++"""
++Script to reproduce the issue with min-similarity-lines=0 in rcfile
++"""
++
++import tempfile
++import os
++from pylint.lint import PyLinter
++from pylint.checkers import similar
++from pylint.testutils import GenericTestReporter as Reporter
++
++def test_min_similarity_lines_zero_rcfile():
++    """Test that setting min-similarity-lines to 0 in rcfile disables duplicate code checking"""
++    # Create two identical files
++    content = """
++def func1():
++    x = 1
++    y = 2
++    return x + y
++
++def func2():
++    x = 1
++    y = 2
++    return x + y
++"""
++    
++    with tempfile.NamedTemporaryFile(mode='w', suffix='.py', delete=False) as f1:
++        f1.write(content)
++        file1 = f1.name
++    
++    with tempfile.NamedTemporaryFile(mode='w', suffix='.py', delete=False) as f2:
++        f2.write(content)
++        file2 = f2.name
++    
++    try:
++        # Create a linter with rcfile that sets min-similarity-lines=0
++        linter = PyLinter(reporter=Reporter())
++        linter.read_config_file(config_file="/testbed/test_rcfile.ini")
++        linter.load_config_file()
++        
++        # Register the similar checker
++        checker = similar.SimilarChecker(linter)
++        linter.register_checker(checker)
++        
++        # Check the files
++        linter.check([file1, file2])
++        
++        # Check if any duplicate code messages were reported
++        messages = linter.reporter.messages
++        duplicate_messages = [msg for msg in messages if "duplicate-code" in str(msg)]
++        
++        print(f"Number of duplicate-code messages: {len(duplicate_messages)}")
++        for msg in duplicate_messages:
++            print(f"Message: {msg}")
++            
++        if len(duplicate_messages) > 0:
++            print("ERROR: Setting min-similarity-lines=0 in rcfile should disable duplicate code checking")
++            return False
++        else:
++            print("SUCCESS: Setting min-similarity-lines=0 in rcfile disabled duplicate code checking")
++            return True
++            
++    finally:
++        # Clean up temporary files
++        os.unlink(file1)
++        os.unlink(file2)
++
++if __name__ == "__main__":
++    test_min_similarity_lines_zero_rcfile()
+\ No newline at end of file
+diff --git a/test_rcfile_detailed.py b/test_rcfile_detailed.py
+new file mode 100644
+index 00000000..2eb3f209
+--- /dev/null
++++ b/test_rcfile_detailed.py
+@@ -0,0 +1,113 @@
++#!/usr/bin/env python3
++
++"""
++Script to reproduce the issue with min-similarity-lines=0 in rcfile
++"""
++
++import tempfile
++import os
++from pylint.lint import PyLinter
++from pylint.checkers import similar
++from pylint.testutils import GenericTestReporter as Reporter
++
++def test_min_similarity_lines_zero_rcfile_detailed():
++    """Test that setting min-similarity-lines to 0 in rcfile disables duplicate code checking"""
++    # Create two identical files with more content
++    content = """
++def func1():
++    # This is a comment
++    x = 1
++    y = 2
++    z = 3
++    a = 4
++    b = 5
++    c = 6
++    return x + y + z + a + b + c
++
++def func2():
++    # This is a comment
++    x = 1
++    y = 2
++    z = 3
++    a = 4
++    b = 5
++    c = 6
++    return x + y + z + a + b + c
++
++def func3():
++    # This is a comment
++    x = 1
++    y = 2
++    z = 3
++    a = 4
++    b = 5
++    c = 6
++    return x + y + z + a + b + c
++"""
++    
++    with tempfile.NamedTemporaryFile(mode='w', suffix='.py', delete=False) as f1:
++        f1.write(content)
++        file1 = f1.name
++    
++    with tempfile.NamedTemporaryFile(mode='w', suffix='.py', delete=False) as f2:
++        f2.write(content)
++        file2 = f2.name
++    
++    try:
++        # Test with min-similarity-lines=0
++        print("Testing with min-similarity-lines=0:")
++        linter = PyLinter(reporter=Reporter())
++        checker = similar.SimilarChecker(linter)
++        checker.set_option("min-similarity-lines", 0)
++        linter.register_checker(checker)
++        
++        # Check the files
++        linter.check([file1, file2])
++        
++        # Check if any duplicate code messages were reported
++        messages = linter.reporter.messages
++        duplicate_messages = [msg for msg in messages if "duplicate-code" in str(msg)]
++        
++        print(f"Number of duplicate-code messages: {len(duplicate_messages)}")
++        for msg in duplicate_messages:
++            print(f"Message: {msg}")
++            
++        if len(duplicate_messages) > 0:
++            print("ERROR: Setting min-similarity-lines=0 should disable duplicate code checking")
++            return False
++        else:
++            print("SUCCESS: Setting min-similarity-lines=0 disabled duplicate code checking")
++            
++        # Test with min-similarity-lines=1
++        print("\nTesting with min-similarity-lines=1:")
++        linter = PyLinter(reporter=Reporter())
++        checker = similar.SimilarChecker(linter)
++        checker.set_option("min-similarity-lines", 1)
++        linter.register_checker(checker)
++        
++        # Check the files
++        linter.check([file1, file2])
++        
++        # Check if any duplicate code messages were reported
++        messages = linter.reporter.messages
++        duplicate_messages = [msg for msg in messages if "duplicate-code" in str(msg)]
++        
++        print(f"Number of duplicate-code messages: {len(duplicate_messages)}")
++        for msg in duplicate_messages:
++            print(f"Message: {msg}")
++            
++        if len(duplicate_messages) > 0:
++            print("With min-similarity-lines=1, duplicate code is detected (expected)")
++        else:
++            print("ERROR: With min-similarity-lines=1, duplicate code should be detected")
++            return False
++            
++        return True
++            
++    finally:
++        # Clean up temporary files
++        os.unlink(file1)
++        os.unlink(file2)
++
++if __name__ == "__main__":
++    test_min_similarity_lines_zero_rcfile_detailed()
+\ No newline at end of file
+diff --git a/test_zero.py b/test_zero.py
+new file mode 100644
+index 00000000..fbd51994
+--- /dev/null
++++ b/test_zero.py
+@@ -0,0 +1,81 @@
++#!/usr/bin/env python3
++
++"""
++Script to test that min-similarity-lines=0 disables duplicate code checking
++"""
++
++import tempfile
++import os
++from pylint.lint import PyLinter
++from pylint.checkers import similar
++from pylint.testutils import GenericTestReporter as Reporter
++
++def test_min_similarity_lines_zero():
++    """Test that setting min-similarity-lines to 0 disables duplicate code checking"""
++    # Create two identical files with more content
++    content = """
++def func1():
++    # This is a comment
++    x = 1
++    y = 2
++    z = 3
++    a = 4
++    b = 5
++    c = 6
++    return x + y + z + a + b + c
++
++def func2():
++    # This is a comment
++    x = 1
++    y = 2
++    z = 3
++    a = 4
++    b = 5
++    c = 6
++    return x + y + z + a + b + c
++"""
++    
++    with tempfile.NamedTemporaryFile(mode='w', suffix='.py', delete=False) as f1:
++        f1.write(content)
++        file1 = f1.name
++    
++    with tempfile.NamedTemporaryFile(mode='w', suffix='.py', delete=False) as f2:
++        f2.write(content)
++        file2 = f2.name
++    
++    try:
++        # Test with min-similarity-lines=0
++        print("Testing with min-similarity-lines=0:")
++        linter = PyLinter(reporter=Reporter())
++        checker = similar.SimilarChecker(linter)
++        linter.register_checker(checker)
++        checker.set_option("min-similarity-lines", 0)
++        
++        # Check the files
++        linter.check([file1, file2])
++        
++        # Check if any duplicate code messages were reported
++        print(f"DEBUG: Reporter has {len(linter.reporter.messages)} messages")
++        for i, msg in enumerate(linter.reporter.messages):
++            print(f"DEBUG: Message {i}: {msg}")
++        messages = linter.reporter.messages
++        duplicate_messages = [msg for msg in messages if "Similar lines" in str(msg)]
++        
++        print(f"Number of duplicate-code messages: {len(duplicate_messages)}")
++        for msg in duplicate_messages:
++            print(f"Message: {msg}")
++            
++        if len(duplicate_messages) > 0:
++            print("ERROR: Setting min-similarity-lines=0 should disable duplicate code checking")
++            return False
++        else:
++            print("SUCCESS: Setting min-similarity-lines=0 disabled duplicate code checking")
++            return True
++            
++    finally:
++        # Clean up temporary files
++        os.unlink(file1)
++        os.unlink(file2)
++
++if __name__ == "__main__":
++    test_min_similarity_lines_zero()
+\ No newline at end of file

@@ -1,0 +1,68 @@
+diff --git a/reproduce_issue.py b/reproduce_issue.py
+new file mode 100644
+index 000000000..1ddef508e
+--- /dev/null
++++ b/reproduce_issue.py
+@@ -0,0 +1,61 @@
++import numpy as np
++from sklearn.metrics.cluster import fowlkes_mallows_score
++import warnings
++
++# Test 1: Basic test to ensure function works
++print("Test 1: Basic test")
++labels_true = [0, 0, 1, 1]
++labels_pred = [0, 0, 1, 1]
++score = fowlkes_mallows_score(labels_true, labels_pred)
++print(f"Basic test score: {score}")
++
++# Test 2: Create a case where pk * qk might overflow
++print("\nTest 2: Large dataset test")
++# Create a large dataset with many samples
++n_samples = 100000
++# Create labels that will generate large pk and qk values
++labels_true = np.random.randint(0, 10, n_samples)
++labels_pred = np.random.randint(0, 10, n_samples)
++
++# Enable warnings to catch RuntimeWarning
++warnings.filterwarnings('error')
++try:
++    score = fowlkes_mallows_score(labels_true, labels_pred)
++    print(f"Large dataset score: {score}")
++except RuntimeWarning as e:
++    print(f"RuntimeWarning caught: {e}")
++    # Try to compute manually to see the issue
++    from sklearn.metrics.cluster import contingency_matrix
++    c = contingency_matrix(labels_true, labels_pred, sparse=True)
++    tk = np.dot(c.data, c.data) - n_samples
++    pk = np.sum(np.asarray(c.sum(axis=0)).ravel() ** 2) - n_samples
++    qk = np.sum(np.asarray(c.sum(axis=1)).ravel() ** 2) - n_samples
++    print(f"tk: {tk}, pk: {pk}, qk: {qk}")
++    print(f"pk * qk: {pk * qk}")
++    print(f"Type of pk: {type(pk)}, Type of qk: {type(qk)}")
++    
++    # Try the suggested fix
++    if tk != 0:
++        # Check if pk or qk is 0
++        if pk > 0 and qk > 0:
++            result = np.sqrt(tk / pk) * np.sqrt(tk / qk)
++            print(f"Result with suggested fix: {result}")
++        else:
++            print(f"pk or qk is 0: pk={pk}, qk={qk}")
++    else:
++        print("tk is 0")
++
++# Test 3: Edge case where tk = 0
++print("\nTest 3: Edge case tk = 0")
++labels_true = [0, 0, 1, 1]
++labels_pred = [2, 3, 4, 5]  # Completely different clusters
++score = fowlkes_mallows_score(labels_true, labels_pred)
++print(f"Score when tk=0: {score}")
++
++# Test 4: Check if overflow actually happens with int32 limit
++print("\nTest 4: Testing overflow at 2^32")
++# Create values that would overflow 32-bit integers
++pk_val = 2**31  # This squared would be 2^62
++qk_val = 2**31
++print(f"pk * qk would be: {pk_val * qk_val}")
++print(f"This is > 2^32: {pk_val * qk_val > 2**32}")
+\ No newline at end of file

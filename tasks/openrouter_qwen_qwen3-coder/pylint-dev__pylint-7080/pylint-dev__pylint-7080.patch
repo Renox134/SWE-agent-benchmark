@@ -1,0 +1,15 @@
+diff --git a/pylint/lint/run.py b/pylint/lint/run.py
+index a7e5d557..297f84e5 100644
+--- a/pylint/lint/run.py
++++ b/pylint/lint/run.py
+@@ -58,6 +58,10 @@ def _query_cpu() -> int | None:
+             cpu_shares = int(file.read().rstrip())
+         # For AWS, gives correct value * 1024.
+         avail_cpu = int(cpu_shares / 1024)
++    
++    # Ensure we return at least 1 CPU if we have a value
++    if avail_cpu is not None:
++        return max(1, avail_cpu)
+     return avail_cpu
+ 
+ 

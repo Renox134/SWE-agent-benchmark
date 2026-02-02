@@ -1,0 +1,96 @@
+diff --git a/reproduce_issue.py b/reproduce_issue.py
+new file mode 100644
+index 000000000..e6dfbee34
+--- /dev/null
++++ b/reproduce_issue.py
+@@ -0,0 +1,11 @@
++import pytest
++
++@pytest.mark.parametrize('data', [b'Hello World'])
++def test_data(data):
++    pass
++
++if __name__ == '__main__':
++    # Run pytest with -bb flag to enable BytesWarning as error
++    import sys
++    sys.argv = ['pytest', '--setup-show', '-v']
++    pytest.main()
+\ No newline at end of file
+diff --git a/test_bytes_warning.py b/test_bytes_warning.py
+new file mode 100644
+index 000000000..c403353b3
+--- /dev/null
++++ b/test_bytes_warning.py
+@@ -0,0 +1,5 @@
++import pytest
++
++@pytest.mark.parametrize('data', [b'Hello World'])
++def test_data(data):
++    pass
+\ No newline at end of file
+diff --git a/test_comprehensive.py b/test_comprehensive.py
+new file mode 100644
+index 000000000..0b147bed0
+--- /dev/null
++++ b/test_comprehensive.py
+@@ -0,0 +1,33 @@
++import pytest
++
++# Test various parameter types including bytes
++@pytest.mark.parametrize('data', [
++    b'Hello World',  # bytes
++    'Hello World',   # str
++    42,              # int
++    3.14,            # float
++    None,            # None
++    True,            # bool
++    [1, 2, 3],       # list
++    {'key': 'value'}, # dict
++    (1, 2, 3),       # tuple
++])
++def test_various_types(data):
++    assert data is not None or data is None  # Simple assertion
++
++# Test with multiple parameters
++@pytest.mark.parametrize('param1,param2', [
++    (b'bytes1', b'bytes2'),
++    ('str1', 'str2'),
++    (123, 456),
++])
++def test_multiple_params(param1, param2):
++    pass
++
++# Test with fixture that has bytes parameter
++@pytest.fixture(params=[b'fixture_bytes', 'fixture_str'])
++def my_fixture(request):
++    return request.param
++
++def test_with_fixture(my_fixture):
++    pass
+\ No newline at end of file
+diff --git a/test_saferepr.py b/test_saferepr.py
+new file mode 100644
+index 000000000..57daa3e25
+--- /dev/null
++++ b/test_saferepr.py
+@@ -0,0 +1,19 @@
++from _pytest._io.saferepr import saferepr
++
++# Test how saferepr handles bytes
++bytes_obj = b'Hello World'
++print("Bytes object: b'Hello World'")
++print("Type:", type(bytes_obj))
++print("saferepr(bytes_obj):", saferepr(bytes_obj))
++print("repr(bytes_obj):", repr(bytes_obj))
++
++# Test with -bb flag simulation
++try:
++    result = "{}".format(bytes_obj)
++    print("Direct format:", result)
++except BytesWarning as e:
++    print("BytesWarning raised:", e)
++
++# Test with saferepr
++result = saferepr(bytes_obj)
++print("saferepr in format: [" + result + "]")
+\ No newline at end of file

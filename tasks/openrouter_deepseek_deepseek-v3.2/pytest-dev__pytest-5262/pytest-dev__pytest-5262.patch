@@ -1,0 +1,35 @@
+diff --git a/reproduce_issue.py b/reproduce_issue.py
+new file mode 100644
+index 00000000..1606d2c7
+--- /dev/null
++++ b/reproduce_issue.py
+@@ -0,0 +1,28 @@
++import sys
++import runpy
++
++print("Before runpy.run_module:")
++print(f"sys.path[0] = {sys.path[0]}")
++print(f"sys.path = {sys.path}")
++
++# Insert a custom path at position 0
++sys.path.insert(0, "something")
++
++print("\nAfter inserting 'something' at position 0:")
++print(f"sys.path[0] = {sys.path[0]}")
++print(f"sys.path = {sys.path}")
++
++print("\nRunning pylint via runpy...")
++try:
++    runpy.run_module('pylint', run_name="__main__", alter_sys=True)
++except SystemExit:
++    print("\nPylint exited (expected)")
++    print("\nAfter runpy.run_module:")
++    print(f"sys.path[0] = {sys.path[0]}")
++    print(f"sys.path = {sys.path}")
++    
++    # Check if 'something' was removed
++    if sys.path[0] != "something":
++        print("\nBUG CONFIRMED: 'something' was removed from sys.path[0]!")
++    else:
++        print("\nBug not reproduced: 'something' is still at sys.path[0]")
+\ No newline at end of file

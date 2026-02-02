@@ -1,0 +1,26 @@
+diff --git a/pylint/config/__init__.py b/pylint/config/__init__.py
+index 84774d0e..31553f18 100644
+--- a/pylint/config/__init__.py
++++ b/pylint/config/__init__.py
+@@ -63,7 +63,11 @@ if "PYLINTHOME" in os.environ:
+ elif USER_HOME == "~":
+     PYLINT_HOME = ".pylint.d"
+ else:
+-    PYLINT_HOME = os.path.join(USER_HOME, ".pylint.d")
++    # XDG Base Directory Specification compliant path
++    xdg_data_home = os.environ.get("XDG_DATA_HOME")
++    if not xdg_data_home:
++        xdg_data_home = os.path.join(USER_HOME, ".local", "share")
++    PYLINT_HOME = os.path.join(xdg_data_home, "pylint")
+ 
+ 
+ def _get_pdata_path(base_name, recurs):
+@@ -110,7 +114,7 @@ ENV_HELP = (
+ The following environment variables are used:
+     * PYLINTHOME
+     Path to the directory where persistent data for the run will be stored. If
+-not found, it defaults to ~/.pylint.d/ or .pylint.d (in the current working
++not found, it defaults to ~/.local/share/pylint/ or .pylint.d (in the current working
+ directory).
+     * PYLINTRC
+     Path to the configuration file. See the documentation for the method used
