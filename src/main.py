@@ -15,7 +15,7 @@ model_keys = ["openrouter/openai/gpt-4o",
               "openrouter/meta-llama/llama-3-70b-instruct",
               "openrouter/mistralai/mistral-small-3.2-24b-instruct"]
 
-slice = (284, 321)
+slice = (315, 351)
 
 dataset_url: str = "SWE-bench/SWE-bench_Verified"
 agent_model: str = model_keys[3]
