@@ -25,8 +25,8 @@ pred_dir = str(tasks_base) + f"/predictions_{dataset_url.replace('/', '_')}.json
 
 def main() -> None:
     # generate_controll_preds()
-    run_agent_batch()
-    # run_bench()
+    # run_agent_batch()
+    run_bench()
 
 def run_agent_single() -> None:
 
