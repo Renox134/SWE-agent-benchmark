@@ -1,0 +1,1003 @@
+diff --git a/debug_flow.py b/debug_flow.py
+new file mode 100644
+index 0000000..89b5e49
+--- /dev/null
++++ b/debug_flow.py
+@@ -0,0 +1,59 @@
++#!/usr/bin/env python
++# -*- coding: utf-8 -*-
++import requests
++import sys
++
++# Monkey patch to_native_string to see what's happening
++import requests.utils
++original_to_native_string = requests.utils.to_native_string
++
++def debug_to_native_string(string, encoding='ascii'):
++    print(f"DEBUG to_native_string called with:")
++    print(f"  Type: {type(string)}")
++    print(f"  Value: {repr(string)}")
++    print(f"  Encoding: {encoding}")
++    try:
++        result = original_to_native_string(string, encoding)
++        print(f"  Result: {repr(result)}")
++        return result
++    except Exception as e:
++        print(f"  ERROR: {type(e).__name__}: {e}")
++        raise
++
++requests.utils.to_native_string = debug_to_native_string
++
++# Also patch _encode_params to see when it's called
++import requests.models
++original_encode_params = requests.models.RequestEncodingMixin._encode_params
++
++@staticmethod
++def debug_encode_params(data):
++    print(f"\nDEBUG _encode_params called with:")
++    print(f"  Type: {type(data)}")
++    print(f"  Value: {repr(data)}")
++    try:
++        result = original_encode_params(data)
++        print(f"  Result: {repr(result)}")
++        return result
++    except Exception as e:
++        print(f"  ERROR: {type(e).__name__}: {e}")
++        raise
++
++requests.models.RequestEncodingMixin._encode_params = debug_encode_params
++
++print("Test 1: Binary data in request body")
++print("=" * 50)
++try:
++    response = requests.put("http://httpbin.org/put", data=u"ööö".encode("utf-8"))
++    print(f"Success! Status: {response.status_code}")
++except Exception as e:
++    print(f"Error: {type(e).__name__}: {e}")
++
++print("\n\nTest 2: Params as bytes")
++print("=" * 50)
++try:
++    response = requests.get("http://httpbin.org/get", params=b"test=foo")
++    print(f"Success! Status: {response.status_code}")
++    print(f"URL: {response.url}")
++except Exception as e:
++    print(f"Error: {type(e).__name__}: {e}")
+\ No newline at end of file
+diff --git a/reproduce_issue.py b/reproduce_issue.py
+new file mode 100644
+index 0000000..2ef27dc
+--- /dev/null
++++ b/reproduce_issue.py
+@@ -0,0 +1,34 @@
++#!/usr/bin/env python
++# -*- coding: utf-8 -*-
++import requests
++
++# Test case from PR description
++try:
++    print("Testing: requests.put with binary data containing non-ASCII characters")
++    # This should fail with requests 2.9
++    response = requests.put("http://httpbin.org/put", data=u"ööö".encode("utf-8"))
++    print("Success! No error occurred.")
++except Exception as e:
++    print(f"Error occurred: {type(e).__name__}: {e}")
++
++# Additional test cases
++print("\nTesting with ASCII-only binary data:")
++try:
++    response = requests.put("http://httpbin.org/put", data=b"hello world")
++    print("Success! No error occurred.")
++except Exception as e:
++    print(f"Error occurred: {type(e).__name__}: {e}")
++
++print("\nTesting with string data:")
++try:
++    response = requests.put("http://httpbin.org/put", data="hello world")
++    print("Success! No error occurred.")
++except Exception as e:
++    print(f"Error occurred: {type(e).__name__}: {e}")
++
++print("\nTesting with unicode string:")
++try:
++    response = requests.put("http://httpbin.org/put", data=u"ööö")
++    print("Success! No error occurred.")
++except Exception as e:
++    print(f"Error occurred: {type(e).__name__}: {e}")
+\ No newline at end of file
+diff --git a/requests/models.py b/requests/models.py
+index 9c624d3..1f1f1cf 100644
+--- a/requests/models.py
++++ b/requests/models.py
+@@ -80,8 +80,17 @@ class RequestEncodingMixin(object):
+         if parameters are supplied as a dict.
+         """
+ 
+-        if isinstance(data, (str, bytes)):
++        if isinstance(data, str):
+             return to_native_string(data)
++        elif isinstance(data, bytes):
++            # Try to decode bytes as UTF-8 first, then Latin-1 as fallback
++            # Latin-1 can decode any byte, so this will never fail
++            try:
++                return data.decode('utf-8')
++            except UnicodeDecodeError:
++                # If UTF-8 fails, try Latin-1
++                # Latin-1 can decode any byte, so this will always succeed
++                return data.decode('latin-1')
+         elif hasattr(data, 'read'):
+             return data
+         elif hasattr(data, '__iter__'):
+diff --git a/test_basic_auth.py b/test_basic_auth.py
+new file mode 100644
+index 0000000..d8bcf58
+--- /dev/null
++++ b/test_basic_auth.py
+@@ -0,0 +1,28 @@
++#!/usr/bin/env python
++# -*- coding: utf-8 -*-
++import requests
++from requests.auth import HTTPBasicAuth
++
++# Test basic auth with ASCII credentials
++print("Test 1: Basic auth with ASCII credentials")
++try:
++    response = requests.get("http://httpbin.org/basic-auth/user/passwd", auth=HTTPBasicAuth('user', 'passwd'))
++    print(f"Success! Status: {response.status_code}")
++except Exception as e:
++    print(f"Error: {type(e).__name__}: {e}")
++
++# Test basic auth with non-ASCII credentials
++print("\nTest 2: Basic auth with non-ASCII credentials")
++try:
++    response = requests.get("http://httpbin.org/basic-auth/user/passwd", auth=HTTPBasicAuth('user', 'pässwd'))
++    print(f"Success! Status: {response.status_code}")
++except Exception as e:
++    print(f"Error: {type(e).__name__}: {e}")
++
++# Test basic auth with non-ASCII username
++print("\nTest 3: Basic auth with non-ASCII username")
++try:
++    response = requests.get("http://httpbin.org/basic-auth/user/passwd", auth=HTTPBasicAuth('üsér', 'passwd'))
++    print(f"Success! Status: {response.status_code}")
++except Exception as e:
++    print(f"Error: {type(e).__name__}: {e}")
+\ No newline at end of file
+diff --git a/test_binary_simple.py b/test_binary_simple.py
+new file mode 100644
+index 0000000..2339879
+--- /dev/null
++++ b/test_binary_simple.py
+@@ -0,0 +1,44 @@
++#!/usr/bin/env python
++# -*- coding: utf-8 -*-
++import requests
++import io
++
++# Test with binary data
++print("Test with binary data:")
++binary_data = bytes([0x00, 0x01, 0x02, 0x80, 0x81, 0x82, 0xff])
++print(f"Original data (hex): {binary_data.hex()}")
++
++# Create a simple test server
++from http.server import HTTPServer, BaseHTTPRequestHandler
++import threading
++
++class TestHandler(BaseHTTPRequestHandler):
++    def do_PUT(self):
++        content_length = int(self.headers['Content-Length'])
++        body = self.rfile.read(content_length)
++        self.send_response(200)
++        self.send_header('Content-Type', 'text/plain')
++        self.end_headers()
++        self.wfile.write(f"Received {len(body)} bytes: {body.hex()}".encode())
++    
++    def log_message(self, format, *args):
++        pass  # Suppress log messages
++
++server = HTTPServer(('localhost', 8888), TestHandler)
++thread = threading.Thread(target=server.serve_forever)
++thread.daemon = True
++thread.start()
++
++try:
++    response = requests.put("http://localhost:8888/", data=binary_data)
++    print(f"Response: {response.text}")
++    
++    # Check what was received
++    if "Received 7 bytes: 000102808182ff" in response.text:
++        print("Binary data preserved correctly!")
++    else:
++        print(f"Data changed! Response: {response.text}")
++except Exception as e:
++    print(f"Error: {type(e).__name__}: {e}")
++finally:
++    server.shutdown()
+\ No newline at end of file
+diff --git a/test_comprehensive.py b/test_comprehensive.py
+new file mode 100644
+index 0000000..1c61ecf
+--- /dev/null
++++ b/test_comprehensive.py
+@@ -0,0 +1,73 @@
++#!/usr/bin/env python
++# -*- coding: utf-8 -*-
++import requests
++
++test_cases = [
++    # (description, callable, should_pass)
++    ("Original issue: UTF-8 bytes as data", 
++     lambda: requests.put("http://httpbin.org/put", data=u"ööö".encode("utf-8")), True),
++    
++    ("ASCII bytes as data", 
++     lambda: requests.put("http://httpbin.org/put", data=b"hello"), True),
++     
++    ("String as data", 
++     lambda: requests.put("http://httpbin.org/put", data="hello"), True),
++     
++    ("Unicode string as data", 
++     lambda: requests.put("http://httpbin.org/put", data=u"ööö"), True),
++     
++    ("Params as ASCII bytes", 
++     lambda: requests.get("http://httpbin.org/get", params=b"test=foo"), True),
++     
++    ("Params as UTF-8 bytes", 
++     lambda: requests.get("http://httpbin.org/get", params=b"test=\xc3\xb6\xc3\xb6\xc3\xb6"), True),
++     
++    ("Params as Latin-1 bytes", 
++     lambda: requests.get("http://httpbin.org/get", params="café=café".encode("latin-1")), True),
++     
++    ("Params as string", 
++     lambda: requests.get("http://httpbin.org/get", params="test=foo"), True),
++     
++    ("Form data as dict", 
++     lambda: requests.post("http://httpbin.org/post", data={"key": "value"}), True),
++     
++    ("Form data as list of tuples", 
++     lambda: requests.post("http://httpbin.org/post", data=[("key", "value")]), True),
++     
++    ("Form data as bytes", 
++     lambda: requests.post("http://httpbin.org/post", data=b"key=value&foo=bar"), True),
++     
++    ("Form data as string", 
++     lambda: requests.post("http://httpbin.org/post", data="key=value&foo=bar"), True),
++     
++    ("Binary data (non-UTF-8)", 
++     lambda: requests.put("http://httpbin.org/put", data=bytes([0x80, 0x81, 0x82])), True),
++     
++    ("File-like object", 
++     lambda: requests.put("http://httpbin.org/put", data=open('/dev/null', 'rb')), True),
++]
++
++all_passed = True
++for description, test_func, should_pass in test_cases:
++    print(f"\n{description}:")
++    try:
++        response = test_func()
++        if hasattr(response, 'status_code'):
++            print(f"  Success! Status: {response.status_code}")
++        else:
++            print(f"  Success!")
++        if not should_pass:
++            print(f"  ERROR: Should have failed but didn't!")
++            all_passed = False
++    except Exception as e:
++        if should_pass:
++            print(f"  ERROR: {type(e).__name__}: {e}")
++            all_passed = False
++        else:
++            print(f"  Expected failure: {type(e).__name__}: {e}")
++
++if all_passed:
++    print("\nAll tests passed!")
++else:
++    print("\nSome tests failed!")
++    exit(1)
+\ No newline at end of file
+diff --git a/test_detailed.py b/test_detailed.py
+new file mode 100644
+index 0000000..659a136
+--- /dev/null
++++ b/test_detailed.py
+@@ -0,0 +1,54 @@
++#!/usr/bin/env python
++# -*- coding: utf-8 -*-
++import requests
++
++# Test 1: Binary data in request body (should work)
++print("Test 1: Binary data in request body")
++try:
++    # This is what the PR description shows failing
++    response = requests.put("http://httpbin.org/put", data=u"ööö".encode("utf-8"))
++    print(f"Success! Status: {response.status_code}")
++except Exception as e:
++    print(f"Error: {type(e).__name__}: {e}")
++
++# Test 2: String data in request body (should work)
++print("\nTest 2: String data in request body")
++try:
++    response = requests.put("http://httpbin.org/put", data="hello world")
++    print(f"Success! Status: {response.status_code}")
++except Exception as e:
++    print(f"Error: {type(e).__name__}: {e}")
++
++# Test 3: Unicode string in request body (should work)
++print("\nTest 3: Unicode string in request body")
++try:
++    response = requests.put("http://httpbin.org/put", data=u"ööö")
++    print(f"Success! Status: {response.status_code}")
++except Exception as e:
++    print(f"Error: {type(e).__name__}: {e}")
++
++# Test 4: ASCII-only binary data in request body (should work)
++print("\nTest 4: ASCII-only binary data in request body")
++try:
++    response = requests.put("http://httpbin.org/put", data=b"hello world")
++    print(f"Success! Status: {response.status_code}")
++except Exception as e:
++    print(f"Error: {type(e).__name__}: {e}")
++
++# Test 5: Params as bytes (should work - issue #2844)
++print("\nTest 5: Params as bytes")
++try:
++    response = requests.get("http://httpbin.org/get", params=b"test=foo")
++    print(f"Success! Status: {response.status_code}")
++    print(f"URL: {response.url}")
++except Exception as e:
++    print(f"Error: {type(e).__name__}: {e}")
++
++# Test 6: Params as string (should work)
++print("\nTest 6: Params as string")
++try:
++    response = requests.get("http://httpbin.org/get", params="test=foo")
++    print(f"Success! Status: {response.status_code}")
++    print(f"URL: {response.url}")
++except Exception as e:
++    print(f"Error: {type(e).__name__}: {e}")
+\ No newline at end of file
+diff --git a/test_edge_cases.py b/test_edge_cases.py
+new file mode 100644
+index 0000000..5f36ec2
+--- /dev/null
++++ b/test_edge_cases.py
+@@ -0,0 +1,53 @@
++#!/usr/bin/env python
++# -*- coding: utf-8 -*-
++import requests
++
++# Test edge cases
++print("Test 1: UTF-8 encoded bytes as data")
++try:
++    # These are UTF-8 encoded bytes that represent text
++    response = requests.put("http://httpbin.org/put", data=u"Hello world".encode("utf-8"))
++    print(f"Success! Status: {response.status_code}")
++except Exception as e:
++    print(f"Error: {type(e).__name__}: {e}")
++
++print("\nTest 2: Non-UTF-8 bytes as data")
++try:
++    # These bytes are not valid UTF-8
++    response = requests.put("http://httpbin.org/put", data=bytes([0x80, 0x81, 0x82]))
++    print(f"Success! Status: {response.status_code}")
++except Exception as e:
++    print(f"Error: {type(e).__name__}: {e}")
++
++print("\nTest 3: Latin-1 encoded bytes as data")
++try:
++    # Latin-1 encoded bytes
++    response = requests.put("http://httpbin.org/put", data="café".encode("latin-1"))
++    print(f"Success! Status: {response.status_code}")
++except Exception as e:
++    print(f"Error: {type(e).__name__}: {e}")
++
++print("\nTest 4: Params as Latin-1 encoded bytes")
++try:
++    # Latin-1 encoded bytes as params
++    response = requests.get("http://httpbin.org/get", params="café=café".encode("latin-1"))
++    print(f"Success! Status: {response.status_code}")
++    print(f"URL: {response.url}")
++except Exception as e:
++    print(f"Error: {type(e).__name__}: {e}")
++
++print("\nTest 5: Headers with non-ASCII characters")
++try:
++    # Headers should be ASCII, but let's test
++    response = requests.get("http://httpbin.org/get", headers={"X-Test": "café"})
++    print(f"Success! Status: {response.status_code}")
++except Exception as e:
++    print(f"Error: {type(e).__name__}: {e}")
++
++print("\nTest 6: Method with non-ASCII characters (should fail)")
++try:
++    # HTTP method should be ASCII
++    response = requests.request("GÉT", "http://httpbin.org/get")
++    print(f"Success! Status: {response.status_code}")
++except Exception as e:
++    print(f"Error: {type(e).__name__}: {e}")
+\ No newline at end of file
+diff --git a/test_final.py b/test_final.py
+new file mode 100644
+index 0000000..6a14ea3
+--- /dev/null
++++ b/test_final.py
+@@ -0,0 +1,61 @@
++#!/usr/bin/env python
++# -*- coding: utf-8 -*-
++import requests
++
++# Test the exact example from the PR description
++print("Test from PR description:")
++try:
++    response = requests.put("http://httpbin.org/put", data=u"ööö".encode("utf-8"))
++    print(f"Success! Status: {response.status_code}")
++    # Check that the data was sent correctly
++    data = response.json()
++    print(f"Data sent: {data.get('data', '')}")
++except Exception as e:
++    print(f"Error: {type(e).__name__}: {e}")
++
++# Test with other encodings
++print("\nTest with Latin-1 encoded bytes:")
++try:
++    response = requests.put("http://httpbin.org/put", data="café".encode("latin-1"))
++    print(f"Success! Status: {response.status_code}")
++    data = response.json()
++    print(f"Data sent: {data.get('data', '')}")
++    print(f"Data sent (hex): {data.get('data', '').encode('latin-1').hex()}")
++except Exception as e:
++    print(f"Error: {type(e).__name__}: {e}")
++
++# Test with binary data
++print("\nTest with binary data:")
++try:
++    binary_data = bytes([0x00, 0x01, 0x02, 0x80, 0x81, 0x82, 0xff])
++    response = requests.put("http://httpbin.org/put", data=binary_data)
++    print(f"Success! Status: {response.status_code}")
++    data = response.json()
++    print(f"Data sent (hex): {data.get('data', '').encode('latin-1').hex()}")
++    print(f"Original data (hex): {binary_data.hex()}")
++    # Check that the data was sent correctly
++    sent_data = data.get('data', '').encode('latin-1')
++    if sent_data == binary_data:
++        print("Data preserved correctly!")
++    else:
++        print(f"Data changed! Original: {binary_data.hex()}, Sent: {sent_data.hex()}")
++except Exception as e:
++    print(f"Error: {type(e).__name__}: {e}")
++
++# Test params as bytes
++print("\nTest params as bytes:")
++try:
++    response = requests.get("http://httpbin.org/get", params=b"test=foo")
++    print(f"Success! Status: {response.status_code}")
++    print(f"URL: {response.url}")
++except Exception as e:
++    print(f"Error: {type(e).__name__}: {e}")
++
++# Test params as UTF-8 bytes
++print("\nTest params as UTF-8 bytes:")
++try:
++    response = requests.get("http://httpbin.org/get", params=b"test=\xc3\xb6\xc3\xb6\xc3\xb6")
++    print(f"Success! Status: {response.status_code}")
++    print(f"URL: {response.url}")
++except Exception as e:
++    print(f"Error: {type(e).__name__}: {e}")
+\ No newline at end of file
+diff --git a/test_fix.py b/test_fix.py
+new file mode 100644
+index 0000000..7e3c7c1
+--- /dev/null
++++ b/test_fix.py
+@@ -0,0 +1,56 @@
++#!/usr/bin/env python
++# -*- coding: utf-8 -*-
++import requests
++import sys
++
++# Test the current behavior
++print("Testing current behavior:")
++try:
++    response = requests.put("http://httpbin.org/put", data=u"ööö".encode("utf-8"))
++    print("Success!")
++except Exception as e:
++    print(f"Error: {type(e).__name__}: {e}")
++
++# Now let's test what happens if we change to_native_string to use 'utf-8' instead of 'ascii'
++print("\n\nTesting with modified to_native_string:")
++import requests.utils
++
++original_to_native_string = requests.utils.to_native_string
++
++def patched_to_native_string(string, encoding='utf-8'):
++    """Patched version that uses utf-8 by default instead of ascii"""
++    out = None
++
++    if isinstance(string, requests.compat.builtin_str):
++        out = string
++    else:
++        if requests.compat.is_py2:
++            out = string.encode(encoding)
++        else:
++            out = string.decode(encoding)
++
++    return out
++
++requests.utils.to_native_string = patched_to_native_string
++
++try:
++    response = requests.put("http://httpbin.org/put", data=u"ööö".encode("utf-8"))
++    print("Success!")
++except Exception as e:
++    print(f"Error: {type(e).__name__}: {e}")
++
++# Test params as bytes
++print("\n\nTesting params as bytes with patched version:")
++try:
++    response = requests.get("http://httpbin.org/get", params=b"test=foo")
++    print(f"Success! URL: {response.url}")
++except Exception as e:
++    print(f"Error: {type(e).__name__}: {e}")
++
++# Test params as bytes with non-ASCII
++print("\n\nTesting params as bytes with non-ASCII:")
++try:
++    response = requests.get("http://httpbin.org/get", params=b"test=\xc3\xb6\xc3\xb6\xc3\xb6")
++    print(f"Success! URL: {response.url}")
++except Exception as e:
++    print(f"Error: {type(e).__name__}: {e}")
+\ No newline at end of file
+diff --git a/test_fix2.py b/test_fix2.py
+new file mode 100644
+index 0000000..3f468d0
+--- /dev/null
++++ b/test_fix2.py
+@@ -0,0 +1,48 @@
++#!/usr/bin/env python
++# -*- coding: utf-8 -*-
++import requests.utils
++import requests.models
++
++# Monkey patch to_native_string in the module where it's used
++original_to_native_string = requests.utils.to_native_string
++
++def patched_to_native_string(string, encoding='utf-8'):
++    """Patched version that uses utf-8 by default instead of ascii"""
++    out = None
++
++    if isinstance(string, requests.compat.builtin_str):
++        out = string
++    else:
++        if requests.compat.is_py2:
++            out = string.encode(encoding)
++        else:
++            out = string.decode(encoding)
++
++    return out
++
++# Patch it in both places
++requests.utils.to_native_string = patched_to_native_string
++requests.models.to_native_string = patched_to_native_string
++
++# Now test
++print("Testing with patched to_native_string (utf-8 default):")
++try:
++    response = requests.put("http://httpbin.org/put", data=u"ööö".encode("utf-8"))
++    print("Success!")
++except Exception as e:
++    print(f"Error: {type(e).__name__}: {e}")
++
++print("\n\nTesting params as bytes with non-ASCII:")
++try:
++    response = requests.get("http://httpbin.org/get", params=b"test=\xc3\xb6\xc3\xb6\xc3\xb6")
++    print(f"Success! URL: {response.url}")
++except Exception as e:
++    print(f"Error: {type(e).__name__}: {e}")
++
++# Test with ASCII params
++print("\n\nTesting params as bytes with ASCII:")
++try:
++    response = requests.get("http://httpbin.org/get", params=b"test=foo")
++    print(f"Success! URL: {response.url}")
++except Exception as e:
++    print(f"Error: {type(e).__name__}: {e}")
+\ No newline at end of file
+diff --git a/test_form_data.py b/test_form_data.py
+new file mode 100644
+index 0000000..2d5482f
+--- /dev/null
++++ b/test_form_data.py
+@@ -0,0 +1,35 @@
++#!/usr/bin/env python
++# -*- coding: utf-8 -*-
++import requests
++
++# Test with form data (dict)
++print("Test 1: Form data as dict")
++try:
++    response = requests.post("http://httpbin.org/post", data={"key": "value", "test": u"ööö"})
++    print(f"Success! Status: {response.status_code}")
++except Exception as e:
++    print(f"Error: {type(e).__name__}: {e}")
++
++# Test with form data (list of tuples)
++print("\nTest 2: Form data as list of tuples")
++try:
++    response = requests.post("http://httpbin.org/post", data=[("key", "value"), ("test", u"ööö")])
++    print(f"Success! Status: {response.status_code}")
++except Exception as e:
++    print(f"Error: {type(e).__name__}: {e}")
++
++# Test with form data (bytes) - this should fail
++print("\nTest 3: Form data as bytes")
++try:
++    response = requests.post("http://httpbin.org/post", data=b"key=value&test=\xc3\xb6\xc3\xb6\xc3\xb6")
++    print(f"Success! Status: {response.status_code}")
++except Exception as e:
++    print(f"Error: {type(e).__name__}: {e}")
++
++# Test with form data (string)
++print("\nTest 4: Form data as string")
++try:
++    response = requests.post("http://httpbin.org/post", data="key=value&test=ööö")
++    print(f"Success! Status: {response.status_code}")
++except Exception as e:
++    print(f"Error: {type(e).__name__}: {e}")
+\ No newline at end of file
+diff --git a/test_latin1.py b/test_latin1.py
+new file mode 100644
+index 0000000..df01a11
+--- /dev/null
++++ b/test_latin1.py
+@@ -0,0 +1,24 @@
++#!/usr/bin/env python
++# -*- coding: utf-8 -*-
++import requests
++
++# Test Latin-1 encoded bytes
++print("Test Latin-1 encoded bytes as params:")
++latin1_bytes = "café=café".encode("latin-1")
++print(f"Latin-1 bytes: {latin1_bytes!r}")
++print(f"Decoded as Latin-1: {latin1_bytes.decode('latin-1')!r}")
++print(f"Decoded as UTF-8 (should fail): ", end="")
++try:
++    print(latin1_bytes.decode('utf-8'))
++except UnicodeDecodeError as e:
++    print(f"Error: {e}")
++
++response = requests.get("http://httpbin.org/get", params=latin1_bytes)
++print(f"URL: {response.url}")
++print(f"Expected: café=café encoded in the URL")
++print(f"Actual: {response.url}")
++
++# Check what was sent
++if response.status_code == 200:
++    data = response.json()
++    print(f"Args received: {data.get('args', {})}")
+\ No newline at end of file
+diff --git a/test_no_decode.py b/test_no_decode.py
+new file mode 100644
+index 0000000..51f3e8d
+--- /dev/null
++++ b/test_no_decode.py
+@@ -0,0 +1,69 @@
++#!/usr/bin/env python
++# -*- coding: utf-8 -*-
++import requests.utils
++import requests.models
++
++# Monkey patch _encode_params to return bytes as-is
++original_encode_params = requests.models.RequestEncodingMixin._encode_params
++
++@staticmethod
++def patched_encode_params(data):
++    """Patched version that returns bytes as-is"""
++    if isinstance(data, bytes):
++        # Return bytes as-is
++        return data
++    elif isinstance(data, str):
++        return requests.utils.to_native_string(data)
++    elif hasattr(data, 'read'):
++        return data
++    elif hasattr(data, '__iter__'):
++        result = []
++        for k, vs in requests.utils.to_key_val_list(data):
++            if isinstance(vs, requests.compat.basestring) or not hasattr(vs, '__iter__'):
++                vs = [vs]
++            for v in vs:
++                if v is not None:
++                    result.append(
++                        (k.encode('utf-8') if isinstance(k, str) else k,
++                         v.encode('utf-8') if isinstance(v, str) else v))
++        return requests.compat.urlencode(result, doseq=True)
++    else:
++        return data
++
++requests.models.RequestEncodingMixin._encode_params = patched_encode_params
++
++# Now test
++print("Test 1: Binary data in request body")
++try:
++    response = requests.put("http://httpbin.org/put", data=u"ööö".encode("utf-8"))
++    print("Success!")
++except Exception as e:
++    print(f"Error: {type(e).__name__}: {e}")
++
++print("\n\nTest 2: Params as bytes")
++try:
++    response = requests.get("http://httpbin.org/get", params=b"test=foo")
++    print(f"Success! URL: {response.url}")
++except Exception as e:
++    print(f"Error: {type(e).__name__}: {e}")
++
++print("\n\nTest 3: Params as bytes with non-ASCII")
++try:
++    response = requests.get("http://httpbin.org/get", params=b"test=\xc3\xb6\xc3\xb6\xc3\xb6")
++    print(f"Success! URL: {response.url}")
++except Exception as e:
++    print(f"Error: {type(e).__name__}: {e}")
++
++print("\n\nTest 4: Form data as dict")
++try:
++    response = requests.post("http://httpbin.org/post", data={"key": "value"})
++    print("Success!")
++except Exception as e:
++    print(f"Error: {type(e).__name__}: {e}")
++
++print("\n\nTest 5: String data")
++try:
++    response = requests.put("http://httpbin.org/put", data="hello")
++    print("Success!")
++except Exception as e:
++    print(f"Error: {type(e).__name__}: {e}")
+\ No newline at end of file
+diff --git a/test_params_bytes.py b/test_params_bytes.py
+new file mode 100644
+index 0000000..7f06ce6
+--- /dev/null
++++ b/test_params_bytes.py
+@@ -0,0 +1,33 @@
++#!/usr/bin/env python
++# -*- coding: utf-8 -*-
++import requests
++
++# Test case from issue #2844
++print("Testing params as bytes:")
++try:
++    request = requests.Request('GET', 'http://example.com', params=b'test=foo').prepare()
++    print(f"URL: {request.url}")
++    assert request.url == 'http://example.com/?test=foo'
++    print("Success! Params bytes are encoded correctly.")
++except Exception as e:
++    print(f"Error occurred: {type(e).__name__}: {e}")
++
++# Test with non-ASCII bytes in params
++print("\nTesting params as bytes with non-ASCII characters:")
++try:
++    # This should probably fail or be encoded properly
++    request = requests.Request('GET', 'http://example.com', params=b'test=\xc3\xb6\xc3\xb6\xc3\xb6').prepare()
++    print(f"URL: {request.url}")
++    print("Success! No error occurred.")
++except Exception as e:
++    print(f"Error occurred: {type(e).__name__}: {e}")
++
++# Test with string params
++print("\nTesting params as string:")
++try:
++    request = requests.Request('GET', 'http://example.com', params='test=foo').prepare()
++    print(f"URL: {request.url}")
++    assert request.url == 'http://example.com/?test=foo'
++    print("Success! String params work.")
++except Exception as e:
++    print(f"Error occurred: {type(e).__name__}: {e}")
+\ No newline at end of file
+diff --git a/test_to_native_string.py b/test_to_native_string.py
+new file mode 100644
+index 0000000..4a89c31
+--- /dev/null
++++ b/test_to_native_string.py
+@@ -0,0 +1,26 @@
++#!/usr/bin/env python
++# -*- coding: utf-8 -*-
++import sys
++sys.path.insert(0, '/testbed')
++
++from requests.utils import to_native_string
++from requests.compat import is_py2, builtin_str
++
++print(f"Python 2: {is_py2}")
++print(f"builtin_str: {builtin_str}")
++
++test_cases = [
++    ("ASCII string", "hello"),
++    ("Unicode string", u"hello"),
++    ("ASCII bytes", b"hello"),
++    ("Non-ASCII bytes", u"ööö".encode("utf-8")),
++    ("Non-ASCII string", u"ööö"),
++]
++
++for name, value in test_cases:
++    print(f"\nTesting {name}: {repr(value)} (type: {type(value)})")
++    try:
++        result = to_native_string(value)
++        print(f"  Result: {repr(result)} (type: {type(result)})")
++    except Exception as e:
++        print(f"  ERROR: {type(e).__name__}: {e}")
+\ No newline at end of file
+diff --git a/test_try_decode.py b/test_try_decode.py
+new file mode 100644
+index 0000000..153bbf8
+--- /dev/null
++++ b/test_try_decode.py
+@@ -0,0 +1,86 @@
++#!/usr/bin/env python
++# -*- coding: utf-8 -*-
++import requests.models
++
++# Monkey patch _encode_params to try decoding bytes as UTF-8
++original_encode_params = requests.models.RequestEncodingMixin._encode_params
++
++@staticmethod
++def patched_encode_params(data):
++    """Encode parameters in a piece of data.
++
++    Will successfully encode parameters when passed as a dict or a list of
++    2-tuples. Order is retained if data is a list of 2-tuples but arbitrary
++    if parameters are supplied as a dict.
++    """
++    if isinstance(data, bytes):
++        # Try to decode as UTF-8, but if it fails, return bytes as-is
++        try:
++            return data.decode('utf-8')
++        except UnicodeDecodeError:
++            # Probably binary data, return as-is
++            return data
++    elif isinstance(data, str):
++        return requests.models.to_native_string(data)
++    elif hasattr(data, 'read'):
++        return data
++    elif hasattr(data, '__iter__'):
++        result = []
++        for k, vs in requests.models.to_key_val_list(data):
++            if isinstance(vs, requests.compat.basestring) or not hasattr(vs, '__iter__'):
++                vs = [vs]
++            for v in vs:
++                if v is not None:
++                    result.append(
++                        (k.encode('utf-8') if isinstance(k, str) else k,
++                         v.encode('utf-8') if isinstance(v, str) else v))
++        return requests.compat.urlencode(result, doseq=True)
++    else:
++        return data
++
++requests.models.RequestEncodingMixin._encode_params = patched_encode_params
++
++# Now test
++print("Test 1: Binary data in request body (UTF-8 encoded)")
++try:
++    response = requests.put("http://httpbin.org/put", data=u"ööö".encode("utf-8"))
++    print("Success!")
++except Exception as e:
++    print(f"Error: {type(e).__name__}: {e}")
++
++print("\n\nTest 2: Binary data in request body (non-UTF-8)")
++try:
++    # Create some random binary data that's not valid UTF-8
++    binary_data = bytes([0x80, 0x81, 0x82, 0x83])
++    response = requests.put("http://httpbin.org/put", data=binary_data)
++    print("Success!")
++except Exception as e:
++    print(f"Error: {type(e).__name__}: {e}")
++
++print("\n\nTest 3: Params as bytes")
++try:
++    response = requests.get("http://httpbin.org/get", params=b"test=foo")
++    print(f"Success! URL: {response.url}")
++except Exception as e:
++    print(f"Error: {type(e).__name__}: {e}")
++
++print("\n\nTest 4: Params as bytes with non-ASCII")
++try:
++    response = requests.get("http://httpbin.org/get", params=b"test=\xc3\xb6\xc3\xb6\xc3\xb6")
++    print(f"Success! URL: {response.url}")
++except Exception as e:
++    print(f"Error: {type(e).__name__}: {e}")
++
++print("\n\nTest 5: String data")
++try:
++    response = requests.put("http://httpbin.org/put", data="hello")
++    print("Success!")
++except Exception as e:
++    print(f"Error: {type(e).__name__}: {e}")
++
++print("\n\nTest 6: Form data as dict")
++try:
++    response = requests.post("http://httpbin.org/post", data={"key": "value", "test": u"ööö"})
++    print("Success!")
++except Exception as e:
++    print(f"Error: {type(e).__name__}: {e}")
+\ No newline at end of file
+diff --git a/test_utf8_fix.py b/test_utf8_fix.py
+new file mode 100644
+index 0000000..4066306
+--- /dev/null
++++ b/test_utf8_fix.py
+@@ -0,0 +1,78 @@
++#!/usr/bin/env python
++# -*- coding: utf-8 -*-
++import requests.models
++
++# Monkey patch _encode_params to use utf-8 encoding
++original_encode_params = requests.models.RequestEncodingMixin._encode_params
++
++@staticmethod
++def patched_encode_params(data):
++    """Encode parameters in a piece of data.
++
++    Will successfully encode parameters when passed as a dict or a list of
++    2-tuples. Order is retained if data is a list of 2-tuples but arbitrary
++    if parameters are supplied as a dict.
++    """
++
++    if isinstance(data, (str, bytes)):
++        return requests.models.to_native_string(data, 'utf-8')
++    elif hasattr(data, 'read'):
++        return data
++    elif hasattr(data, '__iter__'):
++        result = []
++        for k, vs in requests.models.to_key_val_list(data):
++            if isinstance(vs, requests.compat.basestring) or not hasattr(vs, '__iter__'):
++                vs = [vs]
++            for v in vs:
++                if v is not None:
++                    result.append(
++                        (k.encode('utf-8') if isinstance(k, str) else k,
++                         v.encode('utf-8') if isinstance(v, str) else v))
++        return requests.compat.urlencode(result, doseq=True)
++    else:
++        return data
++
++requests.models.RequestEncodingMixin._encode_params = patched_encode_params
++
++# Now test
++print("Test 1: Binary data in request body")
++try:
++    response = requests.put("http://httpbin.org/put", data=u"ööö".encode("utf-8"))
++    print("Success!")
++except Exception as e:
++    print(f"Error: {type(e).__name__}: {e}")
++
++print("\n\nTest 2: Params as bytes")
++try:
++    response = requests.get("http://httpbin.org/get", params=b"test=foo")
++    print(f"Success! URL: {response.url}")
++except Exception as e:
++    print(f"Error: {type(e).__name__}: {e}")
++
++print("\n\nTest 3: Params as bytes with non-ASCII")
++try:
++    response = requests.get("http://httpbin.org/get", params=b"test=\xc3\xb6\xc3\xb6\xc3\xb6")
++    print(f"Success! URL: {response.url}")
++except Exception as e:
++    print(f"Error: {type(e).__name__}: {e}")
++
++print("\n\nTest 4: String data")
++try:
++    response = requests.put("http://httpbin.org/put", data="hello")
++    print("Success!")
++except Exception as e:
++    print(f"Error: {type(e).__name__}: {e}")
++
++print("\n\nTest 5: Unicode string")
++try:
++    response = requests.put("http://httpbin.org/put", data=u"ööö")
++    print("Success!")
++except Exception as e:
++    print(f"Error: {type(e).__name__}: {e}")
++
++print("\n\nTest 6: ASCII-only binary data")
++try:
++    response = requests.put("http://httpbin.org/put", data=b"hello")
++    print("Success!")
++except Exception as e:
++    print(f"Error: {type(e).__name__}: {e}")
+\ No newline at end of file

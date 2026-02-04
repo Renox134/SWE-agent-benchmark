@@ -1,0 +1,162 @@
+diff --git a/debug_flow.py b/debug_flow.py
+new file mode 100644
+index 00000000..1b597ccb
+--- /dev/null
++++ b/debug_flow.py
+@@ -0,0 +1,45 @@
++import requests
++from requests.models import PreparedRequest
++
++# Create a PreparedRequest and manually call prepare_url
++req = PreparedRequest()
++
++print("Testing prepare_url with http://.example.com...")
++try:
++    req.prepare_url("http://.example.com", params=None)
++    print(f"prepare_url succeeded, url is: {req.url}")
++except Exception as e:
++    print(f"Exception in prepare_url: {type(e).__name__}: {e}")
++
++print("\n\nTesting prepare_url with http://*.example.com...")
++try:
++    req = PreparedRequest()
++    req.prepare_url("http://*.example.com", params=None)
++    print(f"prepare_url succeeded, url is: {req.url}")
++except Exception as e:
++    print(f"Exception in prepare_url: {type(e).__name__}: {e}")
++
++print("\n\nTesting prepare_url with http://example.com...")
++try:
++    req = PreparedRequest()
++    req.prepare_url("http://example.com", params=None)
++    print(f"prepare_url succeeded, url is: {req.url}")
++except Exception as e:
++    print(f"Exception in prepare_url: {type(e).__name__}: {e}")
++
++print("\n\nTesting IDNA encoding directly...")
++from requests.models import PreparedRequest
++try:
++    # Test _get_idna_encoded_host directly
++    host = ".example.com"
++    print(f"Testing _get_idna_encoded_host with host: '{host}'")
++    encoded = PreparedRequest._get_idna_encoded_host(host)
++    print(f"Encoded host: {encoded}")
++except Exception as e:
++    print(f"Exception in _get_idna_encoded_host: {type(e).__name__}: {e}")
++
++print("\n\nTesting if host starts with dot...")
++host = ".example.com"
++print(f"host: '{host}'")
++print(f"host.startswith('*'): {host.startswith('*')}")
++print(f"host.startswith('.'): {host.startswith('.')}")
+\ No newline at end of file
+diff --git a/reproduce_issue.py b/reproduce_issue.py
+new file mode 100644
+index 00000000..65cc3f7f
+--- /dev/null
++++ b/reproduce_issue.py
+@@ -0,0 +1,25 @@
++import requests
++
++print("Testing http://.example.com...")
++try:
++    response = requests.get("http://.example.com")
++    print("No exception raised")
++except Exception as e:
++    print(f"Exception type: {type(e).__name__}")
++    print(f"Exception message: {e}")
++
++print("\nTesting http://*.example.com...")
++try:
++    response = requests.get("http://*.example.com")
++    print("No exception raised")
++except Exception as e:
++    print(f"Exception type: {type(e).__name__}")
++    print(f"Exception message: {e}")
++
++print("\nTesting http://example.com...")
++try:
++    response = requests.get("http://example.com")
++    print("No exception raised")
++except Exception as e:
++    print(f"Exception type: {type(e).__name__}")
++    print(f"Exception message: {e}")
+\ No newline at end of file
+diff --git a/test_idna.py b/test_idna.py
+new file mode 100644
+index 00000000..3d451123
+--- /dev/null
++++ b/test_idna.py
+@@ -0,0 +1,14 @@
++import idna
++
++print("Testing IDNA encoding directly...")
++hosts = [".example.com", "example.com", "*.example.com", "xn--example.com"]
++
++for host in hosts:
++    print(f"\nTesting host: '{host}'")
++    try:
++        encoded = idna.encode(host, uts46=True)
++        print(f"  Encoded: {encoded}")
++        decoded = encoded.decode('utf-8')
++        print(f"  Decoded: {decoded}")
++    except Exception as e:
++        print(f"  Exception: {type(e).__name__}: {e}")
+\ No newline at end of file
+diff --git a/test_idna_error.py b/test_idna_error.py
+new file mode 100644
+index 00000000..467f981c
+--- /dev/null
++++ b/test_idna_error.py
+@@ -0,0 +1,16 @@
++import idna
++
++print("Testing IDNA error types...")
++hosts = [".example.com", "*.example.com"]
++
++for host in hosts:
++    print(f"\nTesting host: '{host}'")
++    try:
++        encoded = idna.encode(host, uts46=True)
++        print(f"  Encoded: {encoded}")
++    except idna.IDNAError as e:
++        print(f"  IDNAError: {type(e).__name__}: {e}")
++        print(f"  Is it idna.core.InvalidCodepoint? {isinstance(e, idna.core.InvalidCodepoint)}")
++        print(f"  Is it idna.core.IDNAError? {isinstance(e, idna.core.IDNAError)}")
++    except Exception as e:
++        print(f"  Other Exception: {type(e).__name__}: {e}")
+\ No newline at end of file
+diff --git a/trace_issue.py b/trace_issue.py
+new file mode 100644
+index 00000000..ed9bfd10
+--- /dev/null
++++ b/trace_issue.py
+@@ -0,0 +1,27 @@
++import requests
++import traceback
++
++print("Testing http://.example.com...")
++try:
++    response = requests.get("http://.example.com")
++    print("No exception raised")
++except Exception as e:
++    print(f"Exception type: {type(e).__name__}")
++    print(f"Exception message: {e}")
++    print("\nFull traceback:")
++    traceback.print_exc()
++
++print("\n\nLet's test parse_url directly:")
++from urllib3.util import parse_url
++try:
++    result = parse_url("http://.example.com")
++    print(f"parse_url succeeded: {result}")
++except Exception as e:
++    print(f"Exception from parse_url: {type(e).__name__}: {e}")
++
++print("\n\nLet's test with just the host part:")
++try:
++    result = parse_url(".example.com")
++    print(f"parse_url succeeded: {result}")
++except Exception as e:
++    print(f"Exception from parse_url: {type(e).__name__}: {e}")
+\ No newline at end of file

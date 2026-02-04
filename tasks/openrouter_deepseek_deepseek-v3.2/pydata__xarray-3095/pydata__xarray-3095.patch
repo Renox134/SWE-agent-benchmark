@@ -1,0 +1,166 @@
+diff --git a/test_proxy_auth.py b/test_proxy_auth.py
+new file mode 100644
+index 00000000..0858b55d
+--- /dev/null
++++ b/test_proxy_auth.py
+@@ -0,0 +1,51 @@
++import requests
++from requests.auth import HTTPProxyAuth
++import sys
++
++print(f"Python version: {sys.version}")
++print(f"Requests version: {requests.__version__}")
++
++# Test with a proxy URL that has authentication
++proxy_url = "http://user:pass@proxy.example.com:8080"
++
++# Parse the URL using urlparse
++from urllib.parse import urlparse
++parsed = urlparse(proxy_url)
++print(f"\nParsed proxy URL:")
++print(f"  Scheme: {parsed.scheme}")
++print(f"  Netloc: {parsed.netloc}")
++print(f"  Username: {parsed.username}")
++print(f"  Password: {parsed.password}")
++print(f"  Hostname: {parsed.hostname}")
++print(f"  Port: {parsed.port}")
++
++# Test get_auth_from_url
++from requests.utils import get_auth_from_url
++username, password = get_auth_from_url(proxy_url)
++print(f"\nget_auth_from_url result:")
++print(f"  Username: '{username}'")
++print(f"  Password: '{password}'")
++
++# Test with proxy that has special characters in password
++proxy_url2 = "http://user:pass@word@proxy.example.com:8080"
++parsed2 = urlparse(proxy_url2)
++print(f"\nParsed proxy URL with @ in password:")
++print(f"  Scheme: {parsed2.scheme}")
++print(f"  Netloc: {parsed2.netloc}")
++print(f"  Username: {parsed2.username}")
++print(f"  Password: {parsed2.password}")
++print(f"  Hostname: {parsed2.hostname}")
++print(f"  Port: {parsed2.port}")
++
++username2, password2 = get_auth_from_url(proxy_url2)
++print(f"\nget_auth_from_url result with @ in password:")
++print(f"  Username: '{username2}'")
++print(f"  Password: '{password2}'")
++
++# Test with urllib3's parse_url
++from urllib3.util import parse_url
++parsed3 = parse_url(proxy_url2)
++print(f"\nurllib3 parse_url result with @ in password:")
++print(f"  Username: {parsed3.auth}")
++if parsed3.auth:
++    print(f"  Auth split: {parsed3.auth.split(':')}")
+\ No newline at end of file
+diff --git a/test_python38_urlparse.py b/test_python38_urlparse.py
+new file mode 100644
+index 00000000..c1682586
+--- /dev/null
++++ b/test_python38_urlparse.py
+@@ -0,0 +1,36 @@
++import sys
++from urllib.parse import urlparse
++
++# Test different proxy URL formats
++test_urls = [
++    "http://user:pass@proxy.example.com:8080",
++    "http://user:pass%40word@proxy.example.com:8080",  # URL-encoded @
++    "http://user:pass@word@proxy.example.com:8080",   # Unencoded @ in password
++    "http://user:@proxy.example.com:8080",  # Empty password
++    "http://:pass@proxy.example.com:8080",   # Empty username
++    "http://user:pass:w@rd@proxy.example.com:8080",  # Multiple special chars
++]
++
++print(f"Python version: {sys.version_info}")
++print(f"Python version string: {sys.version}\n")
++
++for url in test_urls:
++    print(f"Testing URL: {url}")
++    parsed = urlparse(url)
++    print(f"  Parsed username: {repr(parsed.username)}")
++    print(f"  Parsed password: {repr(parsed.password)}")
++    print(f"  Parsed netloc: {repr(parsed.netloc)}")
++    print()
++
++# Let's also test what happens with urllib3's parse_url
++try:
++    from urllib3.util import parse_url
++    print("\nTesting with urllib3's parse_url:")
++    for url in test_urls:
++        print(f"\nTesting URL: {url}")
++        parsed = parse_url(url)
++        print(f"  Parsed auth: {repr(parsed.auth)}")
++        if parsed.auth:
++            print(f"  Auth parts: {parsed.auth.split(':')}")
++except ImportError:
++    print("urllib3 not available")
+\ No newline at end of file
+diff --git a/test_urlparse_issue.py b/test_urlparse_issue.py
+new file mode 100644
+index 00000000..9ac69300
+--- /dev/null
++++ b/test_urlparse_issue.py
+@@ -0,0 +1,58 @@
++import sys
++from urllib.parse import urlparse, unquote
++
++# Test what Python 3.8.12 might have changed
++# According to Python docs, in 3.8.12: "urlparse() no longer raises an exception when parsing URLs containing characters that decompose under IDNA2008 to the same character"
++# But there might be other changes...
++
++# Let's test with various proxy URLs
++test_cases = [
++    # (url, expected_username, expected_password)
++    ("http://user:pass@proxy.com:8080", "user", "pass"),
++    ("http://user:pass%40word@proxy.com:8080", "user", "pass@word"),  # @ encoded as %40
++    ("http://user:pass@word@proxy.com:8080", "user", "pass@word"),    # @ not encoded
++    ("http://user:pass%3Aword@proxy.com:8080", "user", "pass:word"),  # : encoded as %3A
++    ("http://user:pass:word@proxy.com:8080", "user", "pass:word"),    # : not encoded
++    ("http://user:pass%2Fword@proxy.com:8080", "user", "pass/word"),  # / encoded as %2F
++    ("http://user:pass/word@proxy.com:8080", "user", "pass/word"),    # / not encoded
++]
++
++print(f"Python version: {sys.version}")
++print()
++
++for url, expected_user, expected_pass in test_cases:
++    print(f"Testing: {url}")
++    parsed = urlparse(url)
++    print(f"  urlparse username: {repr(parsed.username)}")
++    print(f"  urlparse password: {repr(parsed.password)}")
++    
++    # What get_auth_from_url would return
++    try:
++        auth = (unquote(parsed.username) if parsed.username else '', 
++                unquote(parsed.password) if parsed.password else '')
++    except (AttributeError, TypeError):
++        auth = ('', '')
++    
++    print(f"  get_auth_from_url: {repr(auth)}")
++    print(f"  Expected: ({repr(expected_user)}, {repr(expected_pass)})")
++    
++    if auth[0] != expected_user or auth[1] != expected_pass:
++        print(f"  MISMATCH!")
++    print()
++
++# Now let's test what happens when we construct a Proxy-Authorization header
++from requests.auth import _basic_auth_str
++
++print("\nTesting _basic_auth_str:")
++for url, expected_user, expected_pass in test_cases[:3]:
++    parsed = urlparse(url)
++    username = unquote(parsed.username) if parsed.username else ''
++    password = unquote(parsed.password) if parsed.password else ''
++    
++    if username:
++        auth_header = _basic_auth_str(username, password)
++        print(f"URL: {url}")
++        print(f"  Username: {repr(username)}")
++        print(f"  Password: {repr(password)}")
++        print(f"  Proxy-Authorization: {auth_header}")
++        print()
+\ No newline at end of file

@@ -1,0 +1,282 @@
+diff --git a/debug_dtype.py b/debug_dtype.py
+new file mode 100644
+index 00000000..3266d0eb
+--- /dev/null
++++ b/debug_dtype.py
+@@ -0,0 +1,57 @@
++import xarray as xr
++import numpy as np
++from xarray.coding.variables import UnsignedIntegerCoder
++
++# Let's understand what's happening with the pydap engine
++# The issue is that pydap returns unsigned bytes (uint8) but with _Unsigned='false'
++# This means we need to convert uint8 to int8 when _Unsigned='false'
++
++print("Understanding the issue:")
++print("=" * 80)
++
++# Simulate what pydap returns: unsigned bytes with _Unsigned='false'
++print("\n1. Simulating pydap output: uint8 data with _Unsigned='false'")
++data = np.array([0, 127, 128, 255], dtype=np.uint8)
++var = xr.Variable('x', data, attrs={'_Unsigned': 'false'})
++print(f"   Data dtype: {data.dtype}")
++print(f"   Data values: {data}")
++print(f"   Data kind: {data.dtype.kind}")  # Should be 'u' for unsigned
++
++# Check current coder behavior
++coder = UnsignedIntegerCoder()
++decoded = coder.decode(var, name='test')
++print(f"   Decoded dtype: {decoded.dtype}")
++print(f"   Decoded values: {decoded.values}")
++
++# The issue is in the decode method of UnsignedIntegerCoder
++# It only handles the case when data.dtype.kind == "i" and unsigned == "true"
++# But we need to handle when data.dtype.kind == "u" and unsigned == "false"
++
++print("\n2. Looking at the current logic in UnsignedIntegerCoder.decode():")
++print("   - Line 311: if data.dtype.kind == 'i':")
++print("   - Line 312: if unsigned == 'true': convert to unsigned")
++print("   - Line 319-325: else: warning about non-integer type")
++print("\n   The problem: we need to handle data.dtype.kind == 'u' and unsigned == 'false'")
++
++print("\n3. Testing what should happen:")
++print("   When we have uint8 with _Unsigned='false', we should convert to int8")
++print("   This means values > 127 should become negative")
++
++# Let's manually test the conversion
++print("\n4. Manual conversion test:")
++uint8_data = np.array([0, 127, 128, 255], dtype=np.uint8)
++print(f"   Original uint8: {uint8_data}")
++# Convert to int8 view
++int8_data = uint8_data.astype(np.int8)
++print(f"   As int8: {int8_data}")
++print(f"   This is correct: 128 -> -128, 255 -> -1")
++
++print("\n5. Testing the fix:")
++print("   We need to add a case in UnsignedIntegerCoder.decode():")
++print("   if data.dtype.kind == 'u' and unsigned == 'false':")
++print("       convert to signed dtype")
++
++# Let's also check the encode method
++print("\n6. Checking encode method:")
++print("   The encode method handles _Unsigned='true' for signed->unsigned conversion")
++print("   It should also handle _Unsigned='false' for unsigned->signed conversion")
+\ No newline at end of file
+diff --git a/reproduce_issue.py b/reproduce_issue.py
+new file mode 100644
+index 00000000..a624a37a
+--- /dev/null
++++ b/reproduce_issue.py
+@@ -0,0 +1,79 @@
++import xarray as xr
++import numpy as np
++
++# Test URL from the PR description
++test_url = "https://observations.ipsl.fr/thredds/dodsC/EUREC4A/PRODUCTS/testdata/netcdf_testfiles/test_NC_BYTE_neg.nc"
++
++print("Testing with netcdf4 engine:")
++try:
++    ds_nc4 = xr.open_dataset(test_url, engine="netcdf4")
++    print(f"Values with netcdf4: {ds_nc4['test'].values}")
++except Exception as e:
++    print(f"Error with netcdf4: {e}")
++
++print("\nTesting with pydap engine:")
++try:
++    ds_pydap = xr.open_dataset(test_url, engine="pydap")
++    print(f"Values with pydap: {ds_pydap['test'].values}")
++except Exception as e:
++    print(f"Error with pydap: {e}")
++
++# Let's also create a simple test file to understand the issue better
++print("\n\nCreating a test file to understand the issue...")
++import netCDF4 as nc
++
++# Create a test file with signed bytes
++with nc.Dataset('/testbed/test_signed_bytes.nc', 'w') as f:
++    f.createDimension('test', 7)
++    var = f.createVariable('test', 'b', ('test',))
++    var[:] = np.array([-128, -1, 0, 1, 2, -99, 127], dtype=np.int8)
++    # Add _Unsigned=False attribute as per the hack
++    var._Unsigned = 'false'
++    
++print("Created test file with signed bytes and _Unsigned='false'")
++
++# Now let's test reading it back
++print("\nReading test file with netcdf4:")
++ds_test_nc4 = xr.open_dataset('/testbed/test_signed_bytes.nc', engine='netcdf4')
++print(f"Values: {ds_test_nc4['test'].values}")
++print(f"Attributes: {ds_test_nc4['test'].attrs}")
++
++print("\nReading test file with pydap (if available):")
++try:
++    import pydap
++    # We can't test pydap with local file easily, but let's check the logic
++    print("Pydap available, but testing local file might not work")
++except ImportError:
++    print("Pydap not available")
++
++# Let's also test the current UnsignedIntegerCoder behavior
++print("\n\nTesting current UnsignedIntegerCoder behavior:")
++from xarray.coding.variables import UnsignedIntegerCoder
++import xarray as xr
++
++# Test case 1: unsigned bytes with _Unsigned='true'
++print("\nTest 1: unsigned bytes with _Unsigned='true'")
++data = np.array([0, 127, 128, 255], dtype=np.uint8)
++var = xr.Variable('x', data, attrs={'_Unsigned': 'true'})
++coder = UnsignedIntegerCoder()
++decoded = coder.decode(var, name='test')
++print(f"Original dtype: {data.dtype}, Decoded dtype: {decoded.dtype}")
++print(f"Original values: {data}, Decoded values: {decoded.values}")
++
++# Test case 2: signed bytes with _Unsigned='false' (the new case)
++print("\nTest 2: signed bytes with _Unsigned='false' (should be handled)")
++data = np.array([-128, -1, 0, 1, 127], dtype=np.int8)
++var = xr.Variable('x', data, attrs={'_Unsigned': 'false'})
++coder = UnsignedIntegerCoder()
++decoded = coder.decode(var, name='test')
++print(f"Original dtype: {data.dtype}, Decoded dtype: {decoded.dtype}")
++print(f"Original values: {data}, Decoded values: {decoded.values}")
++
++# Test case 3: unsigned bytes with _Unsigned='false' (should convert to signed)
++print("\nTest 3: unsigned bytes with _Unsigned='false' (should convert to signed)")
++data = np.array([0, 127, 128, 255], dtype=np.uint8)
++var = xr.Variable('x', data, attrs={'_Unsigned': 'false'})
++coder = UnsignedIntegerCoder()
++decoded = coder.decode(var, name='test')
++print(f"Original dtype: {data.dtype}, Decoded dtype: {decoded.dtype}")
++print(f"Original values: {data}, Decoded values: {decoded.values}")
+\ No newline at end of file
+diff --git a/test_signed_bytes.nc b/test_signed_bytes.nc
+new file mode 100644
+index 00000000..ec3655aa
+Binary files /dev/null and b/test_signed_bytes.nc differ
+diff --git a/test_unsigned_fix.py b/test_unsigned_fix.py
+new file mode 100644
+index 00000000..830dccc1
+--- /dev/null
++++ b/test_unsigned_fix.py
+@@ -0,0 +1,71 @@
++import xarray as xr
++import numpy as np
++from xarray.coding.variables import UnsignedIntegerCoder
++
++# Test the current behavior and what we need to fix
++print("Testing UnsignedIntegerCoder behavior")
++print("=" * 80)
++
++# Test 1: Current behavior - signed int with _Unsigned='true'
++print("\nTest 1: Signed int8 with _Unsigned='true' (already works)")
++data = np.array([-128, -1, 0, 1, 127], dtype=np.int8)
++var = xr.Variable('x', data, attrs={'_Unsigned': 'true'})
++coder = UnsignedIntegerCoder()
++decoded = coder.decode(var, name='test')
++print(f"  Input dtype: {data.dtype}, values: {data}")
++print(f"  Output dtype: {decoded.dtype}, values: {decoded.values}")
++print(f"  Expected: uint8 [128, 255, 0, 1, 127]")
++
++# Test 2: New case - unsigned int with _Unsigned='false' (needs fixing)
++print("\nTest 2: Unsigned uint8 with _Unsigned='false' (needs fixing)")
++data = np.array([0, 127, 128, 255], dtype=np.uint8)
++var = xr.Variable('x', data, attrs={'_Unsigned': 'false'})
++coder = UnsignedIntegerCoder()
++decoded = coder.decode(var, name='test')
++print(f"  Input dtype: {data.dtype}, values: {data}")
++print(f"  Output dtype: {decoded.dtype}, values: {decoded.values}")
++print(f"  Expected: int8 [0, 127, -128, -1]")
++
++# Test 3: Signed int with _Unsigned='false' (should stay signed)
++print("\nTest 3: Signed int8 with _Unsigned='false' (should stay signed)")
++data = np.array([-128, -1, 0, 1, 127], dtype=np.int8)
++var = xr.Variable('x', data, attrs={'_Unsigned': 'false'})
++coder = UnsignedIntegerCoder()
++decoded = coder.decode(var, name='test')
++print(f"  Input dtype: {data.dtype}, values: {data}")
++print(f"  Output dtype: {decoded.dtype}, values: {decoded.values}")
++print(f"  Expected: int8 [-128, -1, 0, 1, 127]")
++
++# Test 4: Unsigned int with _Unsigned='true' (should stay unsigned)
++print("\nTest 4: Unsigned uint8 with _Unsigned='true' (should stay unsigned)")
++data = np.array([0, 127, 128, 255], dtype=np.uint8)
++var = xr.Variable('x', data, attrs={'_Unsigned': 'true'})
++coder = UnsignedIntegerCoder()
++decoded = coder.decode(var, name='test')
++print(f"  Input dtype: {data.dtype}, values: {data}")
++print(f"  Output dtype: {decoded.dtype}, values: {decoded.values}")
++print(f"  Expected: uint8 [0, 127, 128, 255]")
++
++# Test 5: Non-integer type with _Unsigned attribute (should warn)
++print("\nTest 5: Float with _Unsigned='true' (should warn)")
++data = np.array([1.0, 2.0, 3.0], dtype=np.float32)
++var = xr.Variable('x', data, attrs={'_Unsigned': 'true'})
++coder = UnsignedIntegerCoder()
++decoded = coder.decode(var, name='test')
++print(f"  Input dtype: {data.dtype}, values: {data}")
++print(f"  Output dtype: {decoded.dtype}, values: {decoded.values}")
++print(f"  Expected: float32 [1.0, 2.0, 3.0] with warning")
++
++# Test encode method too
++print("\n\nTesting encode method:")
++print("=" * 80)
++
++# Test encode: unsigned with _Unsigned='false' in encoding
++print("\nTest encode: Unsigned uint8 with encoding _Unsigned='false'")
++data = np.array([0, 127, 128, 255], dtype=np.uint8)
++var = xr.Variable('x', data, encoding={'_Unsigned': 'false'})
++coder = UnsignedIntegerCoder()
++encoded = coder.encode(var, name='test')
++print(f"  Input dtype: {data.dtype}, values: {data}")
++print(f"  Output dtype: {encoded.dtype}, values: {encoded.values}")
++print(f"  Expected: int8 [0, 127, -128, -1]")
+\ No newline at end of file
+diff --git a/xarray/coding/variables.py b/xarray/coding/variables.py
+index b035ff82..dd6bddd2 100644
+--- a/xarray/coding/variables.py
++++ b/xarray/coding/variables.py
+@@ -292,13 +292,23 @@ class UnsignedIntegerCoder(VariableCoder):
+         # https://www.unidata.ucar.edu/software/netcdf/docs/BestPractices.html
+         #     "_Unsigned = "true" to indicate that
+         #      integer data should be treated as unsigned"
+-        if encoding.get("_Unsigned", "false") == "true":
+-            pop_to(encoding, attrs, "_Unsigned")
+-            signed_dtype = np.dtype("i%s" % data.dtype.itemsize)
+-            if "_FillValue" in attrs:
+-                new_fill = signed_dtype.type(attrs["_FillValue"])
+-                attrs["_FillValue"] = new_fill
+-            data = duck_array_ops.around(data).astype(signed_dtype)
++        if "_Unsigned" in encoding:
++            unsigned = pop_to(encoding, attrs, "_Unsigned")
++            
++            if unsigned == "true":
++                # Convert signed to unsigned
++                signed_dtype = np.dtype("i%s" % data.dtype.itemsize)
++                if "_FillValue" in attrs:
++                    new_fill = signed_dtype.type(attrs["_FillValue"])
++                    attrs["_FillValue"] = new_fill
++                data = duck_array_ops.around(data).astype(signed_dtype)
++            elif unsigned == "false" and data.dtype.kind == "u":
++                # Convert unsigned to signed (for OPeNDAP hack)
++                signed_dtype = np.dtype("i%s" % data.dtype.itemsize)
++                if "_FillValue" in attrs:
++                    new_fill = signed_dtype.type(attrs["_FillValue"])
++                    attrs["_FillValue"] = new_fill
++                data = duck_array_ops.around(data).astype(signed_dtype)
+ 
+         return Variable(dims, data, attrs, encoding)
+ 
+@@ -316,6 +326,14 @@ class UnsignedIntegerCoder(VariableCoder):
+                     if "_FillValue" in attrs:
+                         new_fill = unsigned_dtype.type(attrs["_FillValue"])
+                         attrs["_FillValue"] = new_fill
++            elif data.dtype.kind == "u":
++                if unsigned == "false":
++                    signed_dtype = np.dtype("i%s" % data.dtype.itemsize)
++                    transform = partial(np.asarray, dtype=signed_dtype)
++                    data = lazy_elemwise_func(data, transform, signed_dtype)
++                    if "_FillValue" in attrs:
++                        new_fill = signed_dtype.type(attrs["_FillValue"])
++                        attrs["_FillValue"] = new_fill
+             else:
+                 warnings.warn(
+                     "variable %r has _Unsigned attribute but is not "

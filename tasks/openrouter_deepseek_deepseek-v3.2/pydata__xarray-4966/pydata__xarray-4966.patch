@@ -1,0 +1,61 @@
+diff --git a/reproduce_issue.py b/reproduce_issue.py
+new file mode 100644
+index 00000000..d918eafc
+--- /dev/null
++++ b/reproduce_issue.py
+@@ -0,0 +1,41 @@
++import xarray as xr
++
++# Test case from the PR description
++xds1 = xr.Dataset(attrs={'a':'b'})
++xds2 = xr.Dataset(attrs={'a':'c'})
++print(f"a1: {xds1.attrs['a']}, a2: {xds2.attrs['a']}")
++
++xds3 = xr.merge([xds1, xds2], combine_attrs='override')
++print(f"a1: {xds1.attrs['a']}, a2: {xds2.attrs['a']}, a3: {xds3.attrs['a']}")
++
++xds3.attrs['a'] = 'd'
++print(f"a1: {xds1.attrs['a']}, a2: {xds2.attrs['a']}, a3: {xds3.attrs['a']}")
++
++# Check if they're the same object
++print(f"\nAre xds1.attrs and xds3.attrs the same object? {xds1.attrs is xds3.attrs}")
++print(f"Are xds1.attrs and xds3.attrs equal? {xds1.attrs == xds3.attrs}")
++
++# Also test other combine_attrs options to see if they have the same issue
++print("\n--- Testing combine_attrs='no_conflicts' ---")
++xds4 = xr.Dataset(attrs={'a':'b'})
++xds5 = xr.Dataset(attrs={'a':'b'})  # Same value for 'no_conflicts' to work
++xds6 = xr.merge([xds4, xds5], combine_attrs='no_conflicts')
++xds6.attrs['a'] = 'e'
++print(f"a4: {xds4.attrs['a']}, a5: {xds5.attrs['a']}, a6: {xds6.attrs['a']}")
++print(f"Are xds4.attrs and xds6.attrs the same object? {xds4.attrs is xds6.attrs}")
++
++print("\n--- Testing combine_attrs='identical' ---")
++xds7 = xr.Dataset(attrs={'a':'b'})
++xds8 = xr.Dataset(attrs={'a':'b'})  # Same value for 'identical' to work
++xds9 = xr.merge([xds7, xds8], combine_attrs='identical')
++xds9.attrs['a'] = 'f'
++print(f"a7: {xds7.attrs['a']}, a8: {xds8.attrs['a']}, a9: {xds9.attrs['a']}")
++print(f"Are xds7.attrs and xds9.attrs the same object? {xds7.attrs is xds9.attrs}")
++
++print("\n--- Testing combine_attrs='drop' ---")
++xds10 = xr.Dataset(attrs={'a':'b'})
++xds11 = xr.Dataset(attrs={'a':'c'})
++xds12 = xr.merge([xds10, xds11], combine_attrs='drop')
++print(f"xds12.attrs: {xds12.attrs}")
++xds12.attrs['new'] = 'value'
++print(f"After modifying xds12.attrs: xds10.attrs['a'] = {xds10.attrs.get('a')}")
+\ No newline at end of file
+diff --git a/xarray/core/merge.py b/xarray/core/merge.py
+index ca4e29b6..dff00804 100644
+--- a/xarray/core/merge.py
++++ b/xarray/core/merge.py
+@@ -501,7 +501,7 @@ def merge_attrs(variable_attrs, combine_attrs):
+     if combine_attrs == "drop":
+         return {}
+     elif combine_attrs == "override":
+-        return variable_attrs[0]
++        return dict(variable_attrs[0])
+     elif combine_attrs == "no_conflicts":
+         result = dict(variable_attrs[0])
+         for attrs in variable_attrs[1:]:

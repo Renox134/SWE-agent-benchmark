@@ -1,0 +1,62 @@
+diff --git a/reproduce_issue.py b/reproduce_issue.py
+new file mode 100644
+index 00000000..c51da4f7
+--- /dev/null
++++ b/reproduce_issue.py
+@@ -0,0 +1,55 @@
++import xarray
++import copy as cp
++
++print("Testing Dataset.copy() with unicode indices...")
++ds = xarray.Dataset(
++    coords={'x': ['foo'], 'y': ('x', ['bar'])},
++    data_vars={'z': ('x', ['baz'])})
++
++print("\nOriginal dataset:")
++print(ds)
++print(f"Original x dtype: {ds.x.dtype}")
++print(f"Original y dtype: {ds.y.dtype}")
++print(f"Original z dtype: {ds.z.dtype}")
++
++print("\n\nDataset.copy(deep=False):")
++ds_shallow = ds.copy(deep=False)
++print(ds_shallow)
++print(f"Shallow copy x dtype: {ds_shallow.x.dtype}")
++print(f"Shallow copy y dtype: {ds_shallow.y.dtype}")
++print(f"Shallow copy z dtype: {ds_shallow.z.dtype}")
++
++print("\n\nDataset.copy(deep=True):")
++ds_deep = ds.copy(deep=True)
++print(ds_deep)
++print(f"Deep copy x dtype: {ds_deep.x.dtype}")
++print(f"Deep copy y dtype: {ds_deep.y.dtype}")
++print(f"Deep copy z dtype: {ds_deep.z.dtype}")
++
++print("\n\nTesting DataArray.copy()...")
++print("\nOriginal ds.z:")
++print(ds.z)
++print(f"Original ds.z.x dtype: {ds.z.x.dtype}")
++
++print("\n\nds.z.copy(deep=False):")
++da_shallow = ds.z.copy(deep=False)
++print(da_shallow)
++print(f"Shallow copy x dtype: {da_shallow.x.dtype}")
++
++print("\n\nds.z.copy(deep=True):")
++da_deep = ds.z.copy(deep=True)
++print(da_deep)
++print(f"Deep copy x dtype: {da_deep.x.dtype}")
++
++print("\n\nTesting copy.copy() and copy.deepcopy()...")
++print("\ncopy.copy(ds):")
++ds_copy = cp.copy(ds)
++print(f"copy.copy x dtype: {ds_copy.x.dtype}")
++
++print("\ncopy.deepcopy(ds):")
++ds_deepcopy = cp.deepcopy(ds)
++print(f"copy.deepcopy x dtype: {ds_deepcopy.x.dtype}")
++
++print("\n\nChecking if dtypes match:")
++print(f"Original x dtype == Deep copy x dtype: {ds.x.dtype == ds_deep.x.dtype}")
++print(f"Expected: <U3, Got: {ds_deep.x.dtype}")
+\ No newline at end of file

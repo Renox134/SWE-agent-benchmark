@@ -1,0 +1,78 @@
+diff --git a/original_plot.png b/original_plot.png
+new file mode 100644
+index 00000000..72354204
+Binary files /dev/null and b/original_plot.png differ
+diff --git a/reproduce_issue.py b/reproduce_issue.py
+new file mode 100644
+index 00000000..73c345b4
+--- /dev/null
++++ b/reproduce_issue.py
+@@ -0,0 +1,63 @@
++import seaborn as sns
++import seaborn.objects as so
++import matplotlib.pyplot as plt
++import numpy as np
++
++# Load penguins dataset
++penguins = sns.load_dataset("penguins")
++penguins["body_mass_mg"] = penguins["body_mass_g"] * 1000
++
++print("Testing seaborn.objects plot...")
++# Create plot using seaborn.objects
++plot = (
++    so.Plot(
++        penguins, x="bill_length_mm", y="bill_depth_mm",
++        color="species", pointsize="body_mass_mg",
++    )
++    .add(so.Dot())
++)
++
++# Save the plot
++fig = plot.plot()
++plt.savefig("/testbed/original_plot.png")
++print("Plot saved to /testbed/original_plot.png")
++
++# Let's also test with seaborn's scatterplot
++print("\n\nTesting with seaborn.scatterplot...")
++fig2, ax2 = plt.subplots()
++scatter = sns.scatterplot(
++    data=penguins, x="bill_length_mm", y="bill_depth_mm",
++    hue="species", size="body_mass_mg", ax=ax2
++)
++plt.savefig("/testbed/scatterplot.png")
++print("Scatterplot saved to /testbed/scatterplot.png")
++
++# Get the legend handles and labels
++handles, labels = ax2.get_legend_handles_labels()
++print(f"\nScatterplot legend labels: {labels}")
++
++# Now let's test the ScalarFormatter issue directly
++print("\n\nTesting ScalarFormatter behavior...")
++import matplotlib as mpl
++from matplotlib.ticker import ScalarFormatter
++
++# Create a mock axis to test formatter
++fig3, ax3 = plt.subplots()
++ax3.plot([1000000, 5000000], [0, 1])
++
++# Get the formatter from the axis
++formatter = ax3.xaxis.get_major_formatter()
++
++# Test formatting some values
++test_values = [1000000, 2000000, 3000000, 4000000, 5000000]
++labels = formatter.format_ticks(test_values)
++print(f"Formatted labels: {labels}")
++print(f"Formatter offset: {formatter.get_offset()}")
++print(f"Formatter useOffset: {formatter.get_useOffset()}")
++
++# Check what happens when we format individual values
++for val in test_values:
++    label = formatter(val)
++    print(f"Value {val}: '{label}'")
++
++plt.close('all')
+\ No newline at end of file
+diff --git a/scatterplot.png b/scatterplot.png
+new file mode 100644
+index 00000000..55f0c363
+Binary files /dev/null and b/scatterplot.png differ

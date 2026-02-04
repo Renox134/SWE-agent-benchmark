@@ -1,0 +1,46 @@
+diff --git a/reproduce_error.py b/reproduce_error.py
+new file mode 100644
+index 00000000..3fc8757c
+--- /dev/null
++++ b/reproduce_error.py
+@@ -0,0 +1,39 @@
++import xarray as xr
++import numpy as np
++
++# Test case from PR description
++da = xr.DataArray([[1., 2, 3], [4, 5, 6]])
++print("DataArray:")
++print(da)
++print()
++
++# This should fail with current code
++try:
++    result = da.sum(["dim_0", "dim_1"], min_count=1)
++    print("Result:", result)
++except Exception as e:
++    print(f"Error: {type(e).__name__}: {e}")
++
++# Let's also test with single dimension to see it works
++print("\nTesting with single dimension:")
++try:
++    result = da.sum("dim_0", min_count=1)
++    print("Result:", result)
++except Exception as e:
++    print(f"Error: {type(e).__name__}: {e}")
++
++# Test with numpy array directly to understand the issue
++print("\nTesting numpy behavior:")
++a = np.array([[1., 2, 3], [4, 5, 6]])
++mask = np.isnan(a)
++print(f"mask.shape: {mask.shape}")
++print(f"mask.shape[0]: {mask.shape[0]}")
++print(f"mask.shape[(0, 1)]: This will fail")
++try:
++    print(mask.shape[(0, 1)])
++except Exception as e:
++    print(f"Error accessing mask.shape[(0, 1)]: {e}")
++
++# Test np.take approach
++print(f"\nnp.take(mask.shape, (0, 1)): {np.take(mask.shape, (0, 1))}")
++print(f"np.take(mask.shape, (0, 1)).prod(): {np.take(mask.shape, (0, 1)).prod()}")
+\ No newline at end of file

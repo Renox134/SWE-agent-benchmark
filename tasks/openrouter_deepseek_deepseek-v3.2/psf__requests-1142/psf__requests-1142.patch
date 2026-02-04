@@ -1,0 +1,41 @@
+diff --git a/test_empty_blueprint.py b/test_empty_blueprint.py
+new file mode 100644
+index 00000000..81b98a83
+--- /dev/null
++++ b/test_empty_blueprint.py
+@@ -0,0 +1,34 @@
++#!/usr/bin/env python3
++"""Test script to reproduce the empty blueprint name issue."""
++
++import flask
++
++print("Testing Blueprint with empty name...")
++try:
++    # Try to create a blueprint with an empty name
++    bp = flask.Blueprint("", __name__)
++    print("ERROR: Blueprint with empty name was created without raising ValueError!")
++    print(f"Blueprint name: '{bp.name}'")
++except ValueError as e:
++    print(f"SUCCESS: ValueError raised: {e}")
++except Exception as e:
++    print(f"ERROR: Unexpected exception raised: {type(e).__name__}: {e}")
++
++print("\nTesting Blueprint with non-empty name...")
++try:
++    # Try to create a blueprint with a valid name
++    bp = flask.Blueprint("myblueprint", __name__)
++    print(f"SUCCESS: Blueprint with name '{bp.name}' created successfully")
++except Exception as e:
++    print(f"ERROR: Unexpected exception raised: {type(e).__name__}: {e}")
++
++print("\nTesting Blueprint with whitespace-only name...")
++try:
++    # Try to create a blueprint with whitespace-only name
++    bp = flask.Blueprint("   ", __name__)
++    print(f"Blueprint with whitespace-only name created: '{bp.name}'")
++    print("Should this be allowed?")
++except ValueError as e:
++    print(f"ValueError raised: {e}")
++except Exception as e:
++    print(f"ERROR: Unexpected exception raised: {type(e).__name__}: {e}")
+\ No newline at end of file

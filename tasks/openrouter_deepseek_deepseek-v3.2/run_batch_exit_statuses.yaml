@@ -1,44 +1,39 @@
 instances_by_exit_status:
     Uncaught UnicodeEncodeError:
-    - pytest-dev__pytest-5262
-    - pylint-dev__pylint-6903
-    - pylint-dev__pylint-7080
-    - pytest-dev__pytest-6197
-    exit_error:
-    - pytest-dev__pytest-7982
+    - psf__requests-1766
+    - pydata__xarray-3993
     exit_format:
-    - pylint-dev__pylint-4970
-    - pylint-dev__pylint-6528
-    - pytest-dev__pytest-7521
+    - mwaskom__seaborn-3069
+    - psf__requests-1724
+    - matplotlib__matplotlib-26342
+    - psf__requests-2317
+    - pydata__xarray-4687
+    - pydata__xarray-6721
+    - pydata__xarray-6461
     submitted:
-    - pytest-dev__pytest-5631
+    - pydata__xarray-3151
+    - psf__requests-2931
+    submitted (exit_cost):
+    - pydata__xarray-4075
     submitted (exit_error):
-    - pytest-dev__pytest-10356
+    - pallets__flask-5014
+    - pydata__xarray-2905
+    - psf__requests-6028
+    - psf__requests-5414
+    - pydata__xarray-3305
+    - pydata__xarray-4094
     submitted (exit_format):
-    - pydata__xarray-7393
-    - pydata__xarray-7229
-    - pydata__xarray-6992
-    - pylint-dev__pylint-4604
-    - pydata__xarray-6938
-    - pylint-dev__pylint-4551
-    - pydata__xarray-7233
-    - pylint-dev__pylint-4661
-    - pylint-dev__pylint-6386
-    - pytest-dev__pytest-10051
-    - pylint-dev__pylint-8898
-    - pytest-dev__pytest-10081
-    - pylint-dev__pylint-7277
-    - pytest-dev__pytest-5787
-    - pytest-dev__pytest-5840
-    - pytest-dev__pytest-6202
-    - pytest-dev__pytest-7324
-    - pytest-dev__pytest-7432
-    - pytest-dev__pytest-7205
-    - pytest-dev__pytest-7490
-    - pytest-dev__pytest-5809
-    - pytest-dev__pytest-7236
-    - pytest-dev__pytest-7571
-    - pytest-dev__pytest-8399
-    - scikit-learn__scikit-learn-10297
-    - scikit-learn__scikit-learn-10844
-total_cost: 9.698181000000005
+    - mwaskom__seaborn-3187
+    - matplotlib__matplotlib-26291
+    - psf__requests-1921
+    - psf__requests-1142
+    - matplotlib__matplotlib-26466
+    - pydata__xarray-3095
+    - pydata__xarray-3677
+    - pydata__xarray-4356
+    - pydata__xarray-4695
+    - pydata__xarray-4629
+    - pydata__xarray-6744
+    - pydata__xarray-6599
+    - pydata__xarray-4966
+total_cost: 9.319482039999995

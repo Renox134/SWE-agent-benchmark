@@ -1,0 +1,88 @@
+diff --git a/test_content_length.py b/test_content_length.py
+new file mode 100644
+index 0000000..cb3de58
+--- /dev/null
++++ b/test_content_length.py
+@@ -0,0 +1,38 @@
++#!/usr/bin/env python
++import requests
++import json
++
++# Test to see if requests.get sends content-length header
++# We'll use httpbin.org to inspect the headers sent
++
++print("Testing requests.get with no data...")
++r = requests.get('http://httpbin.org/get')
++response = r.json()
++print("Headers sent:", json.dumps(response['headers'], indent=2))
++
++# Check if content-length was sent
++if 'Content-Length' in response['headers']:
++    print("\nERROR: Content-Length header was sent with GET request!")
++    print(f"Content-Length value: {response['headers']['Content-Length']}")
++else:
++    print("\nOK: No Content-Length header sent")
++
++# Test with data parameter
++print("\n\nTesting requests.get with data parameter...")
++r = requests.get('http://httpbin.org/get', data={'key': 'value'})
++response = r.json()
++print("Headers sent:", json.dumps(response['headers'], indent=2))
++
++if 'Content-Length' in response['headers']:
++    print(f"\nContent-Length value: {response['headers']['Content-Length']}")
++    print("Note: Content-Length is expected when data is provided")
++
++# Test POST for comparison
++print("\n\nTesting requests.post for comparison...")
++r = requests.post('http://httpbin.org/post', data={'key': 'value'})
++response = r.json()
++print("Headers sent:", json.dumps(response['headers'], indent=2))
++
++if 'Content-Length' in response['headers']:
++    print(f"\nContent-Length value: {response['headers']['Content-Length']}")
++    print("Note: Content-Length is expected for POST requests with data")
+\ No newline at end of file
+diff --git a/test_issue.py b/test_issue.py
+new file mode 100644
+index 0000000..3e60ef2
+--- /dev/null
++++ b/test_issue.py
+@@ -0,0 +1,36 @@
++#!/usr/bin/env python
++import requests
++
++# Test to see if requests.get sends content-length header
++# by examining the prepared request
++
++print("Testing requests.get with no data...")
++req = requests.Request('GET', 'http://example.com')
++prepared = req.prepare()
++print(f"Headers in prepared request: {dict(prepared.headers)}")
++
++if 'Content-Length' in prepared.headers:
++    print(f"ERROR: Content-Length header was sent with GET request!")
++    print(f"Content-Length value: {prepared.headers['Content-Length']}")
++else:
++    print("OK: No Content-Length header sent")
++
++# Test with data parameter
++print("\n\nTesting requests.get with data parameter...")
++req = requests.Request('GET', 'http://example.com', data={'key': 'value'})
++prepared = req.prepare()
++print(f"Headers in prepared request: {dict(prepared.headers)}")
++
++if 'Content-Length' in prepared.headers:
++    print(f"Content-Length value: {prepared.headers['Content-Length']}")
++    print("Note: Content-Length is expected when data is provided")
++
++# Test POST for comparison
++print("\n\nTesting requests.post for comparison...")
++req = requests.Request('POST', 'http://example.com', data={'key': 'value'})
++prepared = req.prepare()
++print(f"Headers in prepared request: {dict(prepared.headers)}")
++
++if 'Content-Length' in prepared.headers:
++    print(f"Content-Length value: {prepared.headers['Content-Length']}")
++    print("Note: Content-Length is expected for POST requests with data")
+\ No newline at end of file

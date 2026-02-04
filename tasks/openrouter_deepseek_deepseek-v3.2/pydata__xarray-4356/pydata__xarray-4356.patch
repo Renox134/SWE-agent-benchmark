@@ -1,0 +1,499 @@
+diff --git a/reproduce_error.py b/reproduce_error.py
+new file mode 100644
+index 00000000..fce37aa6
+--- /dev/null
++++ b/reproduce_error.py
+@@ -0,0 +1,17 @@
++import xarray as xr
++
++ds = xr.Dataset({'a': 0})
++da = xr.DataArray(1, name='b')
++
++print("Testing xr.merge([ds, da]):")
++expected = xr.merge([ds, da])  # works fine
++print(expected)
++print()
++
++print("Testing ds.merge(da):")
++try:
++    actual = ds.merge(da)  # fails
++    print("Success!")
++    print(actual)
++except Exception as e:
++    print(f"Error: {type(e).__name__}: {e}")
+\ No newline at end of file
+diff --git a/test_consistency.py b/test_consistency.py
+new file mode 100644
+index 00000000..d2024bc5
+--- /dev/null
++++ b/test_consistency.py
+@@ -0,0 +1,77 @@
++import xarray as xr
++import numpy as np
++
++print("Test consistency between xr.merge and ds.merge for DataArrays")
++
++# Test 1: Simple case
++ds = xr.Dataset({'a': 0})
++da = xr.DataArray(1, name='b')
++
++result1 = xr.merge([ds, da])
++result2 = ds.merge(da)
++
++print("Test 1 - Simple case:")
++print("xr.merge([ds, da]):", result1)
++print("ds.merge(da):", result2)
++print("Are they equal?", result1.equals(result2))
++print()
++
++# Test 2: With dimensions
++ds2 = xr.Dataset({'a': ('x', [1, 2, 3])})
++da2 = xr.DataArray([4, 5, 6], dims=['x'], name='b')
++
++result3 = xr.merge([ds2, da2])
++result4 = ds2.merge(da2)
++
++print("Test 2 - With dimensions:")
++print("xr.merge([ds2, da2]):", result3)
++print("ds2.merge(da2):", result4)
++print("Are they equal?", result3.equals(result4))
++print()
++
++# Test 3: With coordinates
++ds3 = xr.Dataset({'a': ('x', [1, 2, 3]), 'x': [0, 1, 2]})
++da3 = xr.DataArray([4, 5, 6], dims=['x'], coords={'x': [0, 1, 2], 'y': ('x', [7, 8, 9])}, name='b')
++
++result5 = xr.merge([ds3, da3])
++result6 = ds3.merge(da3)
++
++print("Test 3 - With coordinates:")
++print("xr.merge([ds3, da3]):", result5)
++print("ds3.merge(da3):", result6)
++print("Are they equal?", result5.equals(result6))
++print()
++
++# Test 4: With overwrite_vars
++ds4 = xr.Dataset({'a': 0, 'b': 1})
++da4 = xr.DataArray(2, name='b')
++
++# Note: xr.merge doesn't support overwrite_vars, so we need to test differently
++print("Test 4 - With overwrite_vars:")
++print("ds4.merge(da4, overwrite_vars='b'):", ds4.merge(da4, overwrite_vars='b'))
++print()
++
++# Test 5: Multiple DataArrays
++ds5 = xr.Dataset({'a': 0})
++da5a = xr.DataArray(1, name='b')
++da5b = xr.DataArray(2, name='c')
++
++result7 = xr.merge([ds5, da5a, da5b])
++result8 = ds5.merge(da5a).merge(da5b)
++
++print("Test 5 - Multiple DataArrays:")
++print("xr.merge([ds5, da5a, da5b]):", result7)
++print("ds5.merge(da5a).merge(da5b):", result8)
++print("Are they equal?", result7.equals(result8))
++print()
++
++# Test 6: update method
++ds6 = xr.Dataset({'a': 0, 'b': 1})
++da6 = xr.DataArray(2, name='b')
++
++print("Test 6 - Update method:")
++ds6_copy = ds6.copy()
++ds6_copy.update(da6)
++print("ds6.update(da6):", ds6_copy)
++print("Should be same as merge with overwrite_vars='b':", ds6.merge(da6, overwrite_vars='b'))
++print("Are they equal?", ds6_copy.equals(ds6.merge(da6, overwrite_vars='b')))
+\ No newline at end of file
+diff --git a/test_dataarray_merge.py b/test_dataarray_merge.py
+new file mode 100644
+index 00000000..a87b15ef
+--- /dev/null
++++ b/test_dataarray_merge.py
+@@ -0,0 +1,61 @@
++import xarray as xr
++
++# Test 1: Basic DataArray merge with dataset.merge()
++print("Test 1: Basic DataArray merge with dataset.merge()")
++ds = xr.Dataset({'a': 0})
++da = xr.DataArray(1, name='b')
++
++print("Testing xr.merge([ds, da]):")
++expected = xr.merge([ds, da])  # works fine
++print(expected)
++print()
++
++print("Testing ds.merge(da):")
++try:
++    actual = ds.merge(da)  # fails
++    print("Success!")
++    print(actual)
++except Exception as e:
++    print(f"Error: {type(e).__name__}: {e}")
++print()
++
++# Test 2: DataArray with dimensions
++print("\nTest 2: DataArray with dimensions")
++ds2 = xr.Dataset({'a': ('x', [1, 2, 3])})
++da2 = xr.DataArray([4, 5, 6], dims=['x'], name='b')
++
++print("Testing xr.merge([ds2, da2]):")
++expected2 = xr.merge([ds2, da2])
++print(expected2)
++print()
++
++print("Testing ds2.merge(da2):")
++try:
++    actual2 = ds2.merge(da2)
++    print("Success!")
++    print(actual2)
++except Exception as e:
++    print(f"Error: {type(e).__name__}: {e}")
++print()
++
++# Test 3: DataArray without name
++print("\nTest 3: DataArray without name")
++ds3 = xr.Dataset({'a': 0})
++da3 = xr.DataArray(1)  # No name
++
++print("Testing xr.merge([ds3, da3]):")
++try:
++    expected3 = xr.merge([ds3, da3])
++    print("Success!")
++    print(expected3)
++except Exception as e:
++    print(f"Error: {type(e).__name__}: {e}")
++print()
++
++print("Testing ds3.merge(da3):")
++try:
++    actual3 = ds3.merge(da3)
++    print("Success!")
++    print(actual3)
++except Exception as e:
++    print(f"Error: {type(e).__name__}: {e}")
+\ No newline at end of file
+diff --git a/test_dict_with_dataarray.py b/test_dict_with_dataarray.py
+new file mode 100644
+index 00000000..fff54fed
+--- /dev/null
++++ b/test_dict_with_dataarray.py
+@@ -0,0 +1,50 @@
++import xarray as xr
++
++print("Test dict with DataArray values in update method")
++
++# Test 1: dict with DataArray value
++ds1 = xr.Dataset({'a': 0})
++da1 = xr.DataArray(1, name='b')
++
++print("Test 1: dict with DataArray")
++print("ds1:", ds1)
++print("dict with da1:", {'b': da1})
++result1 = ds1.update({'b': da1})
++print("ds1.update({'b': da1}):", result1)
++print()
++
++# Test 2: dict with multiple DataArrays
++ds2 = xr.Dataset({'a': 0})
++da2a = xr.DataArray(1, name='b')
++da2b = xr.DataArray(2, name='c')
++
++print("Test 2: dict with multiple DataArrays")
++result2 = ds2.update({'b': da2a, 'c': da2b})
++print("ds2.update({'b': da2a, 'c': da2b}):", result2)
++print()
++
++# Test 3: dict with DataArray that has conflicting coordinates
++ds3 = xr.Dataset({'a': ('x', [1, 2, 3]), 'x': [0, 1, 2]})
++da3 = xr.DataArray([4, 5, 6], dims=['x'], coords={'x': [0, 1, 2], 'y': ('x', [7, 8, 9])}, name='b')
++
++print("Test 3: DataArray with coordinates")
++print("ds3:", ds3)
++print("da3:", da3)
++result3 = ds3.update({'b': da3})
++print("ds3.update({'b': da3}):", result3)
++print("Note: y coordinate should be added")
++print()
++
++# Test 4: dict with DataArray that has non-dimension coordinate that conflicts
++ds4 = xr.Dataset({'a': ('x', [1, 2, 3]), 'x': [0, 1, 2], 'y': 10})
++da4 = xr.DataArray([4, 5, 6], dims=['x'], coords={'x': [0, 1, 2], 'y': ('x', [7, 8, 9])}, name='b')
++
++print("Test 4: DataArray with conflicting non-dimension coordinate")
++print("ds4 has scalar coordinate y=10")
++print("da4 has coordinate y as data variable with shape (3,)")
++result4 = ds4.update({'b': da4})
++print("ds4.update({'b': da4}):", result4)
++print("Note: y coordinate from da4 should be dropped (conflict)")
++print()
++
++print("All tests passed!")
+\ No newline at end of file
+diff --git a/test_edge_cases.py b/test_edge_cases.py
+new file mode 100644
+index 00000000..26b56826
+--- /dev/null
++++ b/test_edge_cases.py
+@@ -0,0 +1,88 @@
++import xarray as xr
++import numpy as np
++
++print("Test 1: DataArray with coordinates")
++ds = xr.Dataset({'a': ('x', [1, 2, 3]), 'x': [0, 1, 2]})
++da = xr.DataArray([4, 5, 6], dims=['x'], coords={'x': [0, 1, 2], 'y': ('x', [7, 8, 9])}, name='b')
++
++print("ds:", ds)
++print("da:", da)
++print()
++
++print("Testing ds.merge(da):")
++result = ds.merge(da)
++print(result)
++print()
++
++print("Test 2: DataArray with overwrite_vars")
++ds2 = xr.Dataset({'a': 0, 'b': 1})
++da2 = xr.DataArray(2, name='b')
++
++print("ds2:", ds2)
++print("da2:", da2)
++print()
++
++print("Testing ds2.merge(da2, overwrite_vars='b'):")
++result2 = ds2.merge(da2, overwrite_vars='b')
++print(result2)
++print()
++
++print("Test 3: DataArray with overwrite_vars as set")
++ds3 = xr.Dataset({'a': 0, 'b': 1, 'c': 2})
++da3 = xr.DataArray(3, name='b')
++
++print("Testing ds3.merge(da3, overwrite_vars={'b'}):")
++result3 = ds3.merge(da3, overwrite_vars={'b'})
++print(result3)
++print()
++
++print("Test 4: DataArray with multiple overwrite_vars")
++ds4 = xr.Dataset({'a': 0, 'b': 1, 'c': 2})
++da4 = xr.DataArray(3, name='b')
++
++print("Testing ds4.merge(da4, overwrite_vars=['b', 'c']):")
++try:
++    result4 = ds4.merge(da4, overwrite_vars=['b', 'c'])
++    print(result4)
++except Exception as e:
++    print(f"Error: {type(e).__name__}: {e}")
++print()
++
++print("Test 5: DataArray update")
++ds5 = xr.Dataset({'a': 0, 'b': 1})
++da5 = xr.DataArray(2, name='b')
++
++print("Testing ds5.update(da5):")
++ds5_copy = ds5.copy()
++ds5_copy.update(da5)
++print(ds5_copy)
++print()
++
++print("Test 6: Unnamed DataArray should fail")
++ds6 = xr.Dataset({'a': 0})
++da6 = xr.DataArray(1)  # No name
++
++print("Testing ds6.merge(da6):")
++try:
++    result6 = ds6.merge(da6)
++    print(result6)
++except ValueError as e:
++    print(f"Expected ValueError: {e}")
++print()
++
++print("Test 7: DataArray with compat='identical'")
++ds7 = xr.Dataset({'a': 0})
++da7 = xr.DataArray(1, name='b')
++
++print("Testing ds7.merge(da7, compat='identical'):")
++result7 = ds7.merge(da7, compat='identical')
++print(result7)
++print()
++
++print("Test 8: DataArray with join='inner' on overlapping dimensions")
++ds8 = xr.Dataset({'a': ('x', [1, 2, 3]), 'x': [0, 1, 2]})
++da8 = xr.DataArray([4, 5], dims=['x'], coords={'x': [1, 2]}, name='b')
++
++print("Testing ds8.merge(da8, join='inner'):")
++result8 = ds8.merge(da8, join='inner')
++print(result8)
+\ No newline at end of file
+diff --git a/test_overwrite_vars.py b/test_overwrite_vars.py
+new file mode 100644
+index 00000000..a7b1d2d1
+--- /dev/null
++++ b/test_overwrite_vars.py
+@@ -0,0 +1,70 @@
++import xarray as xr
++
++print("Test overwrite_vars with DataArray")
++
++# Test 1: overwrite_vars matches DataArray name
++ds1 = xr.Dataset({'a': 0, 'b': 1})
++da1 = xr.DataArray(2, name='b')
++
++print("Test 1: overwrite_vars='b' (matches DataArray name)")
++print("ds1:", ds1)
++print("da1:", da1)
++result1 = ds1.merge(da1, overwrite_vars='b')
++print("ds1.merge(da1, overwrite_vars='b'):", result1)
++print("Expected: b should be 2")
++assert result1['b'].values == 2
++print()
++
++# Test 2: overwrite_vars doesn't match DataArray name
++ds2 = xr.Dataset({'a': 0, 'b': 1})
++da2 = xr.DataArray(2, name='c')
++
++print("Test 2: overwrite_vars='b' (doesn't match DataArray name 'c')")
++print("ds2:", ds2)
++print("da2:", da2)
++result2 = ds2.merge(da2, overwrite_vars='b')
++print("ds2.merge(da2, overwrite_vars='b'):", result2)
++print("Expected: b should be 1 (not overwritten), c should be 2")
++assert result2['b'].values == 1
++assert result2['c'].values == 2
++print()
++
++# Test 3: overwrite_vars is empty set
++ds3 = xr.Dataset({'a': 0, 'b': 1})
++da3 = xr.DataArray(2, name='c')
++
++print("Test 3: overwrite_vars=set()")
++result3 = ds3.merge(da3, overwrite_vars=set())
++print("ds3.merge(da3, overwrite_vars=set()):", result3)
++print("Expected: a=0, b=1, c=2")
++assert result3['a'].values == 0
++assert result3['b'].values == 1
++assert result3['c'].values == 2
++print()
++
++# Test 4: overwrite_vars is list with DataArray name
++ds4 = xr.Dataset({'a': 0, 'b': 1, 'c': 3})
++da4 = xr.DataArray(2, name='b')
++
++print("Test 4: overwrite_vars=['b', 'c']")
++result4 = ds4.merge(da4, overwrite_vars=['b', 'c'])
++print("ds4.merge(da4, overwrite_vars=['b', 'c']):", result4)
++print("Expected: a=0, b=2 (overwritten), c=3 (not in DataArray, so stays)")
++assert result4['a'].values == 0
++assert result4['b'].values == 2
++assert result4['c'].values == 3
++print()
++
++# Test 5: overwrite_vars contains name not in dataset
++ds5 = xr.Dataset({'a': 0})
++da5 = xr.DataArray(1, name='b')
++
++print("Test 5: overwrite_vars='c' (not in dataset or DataArray)")
++try:
++    result5 = ds5.merge(da5, overwrite_vars='c')
++    print("ds5.merge(da5, overwrite_vars='c'):", result5)
++except Exception as e:
++    print(f"Expected error: {type(e).__name__}: {e}")
++print()
++
++print("All tests passed!")
+\ No newline at end of file
+diff --git a/test_update.py b/test_update.py
+new file mode 100644
+index 00000000..fa6c7fe6
+--- /dev/null
++++ b/test_update.py
+@@ -0,0 +1,12 @@
++import xarray as xr
++
++ds = xr.Dataset({'a': 0})
++da = xr.DataArray(1, name='b')
++
++print("Testing ds.update(da):")
++try:
++    ds.update(da)
++    print("Success!")
++    print(ds)
++except Exception as e:
++    print(f"Error: {type(e).__name__}: {e}")
+\ No newline at end of file
+diff --git a/xarray/core/dataset.py b/xarray/core/dataset.py
+index ac0a923d..fe700e7b 100644
+--- a/xarray/core/dataset.py
++++ b/xarray/core/dataset.py
+@@ -3515,7 +3515,7 @@ class Dataset(Mapping, ImplementsDatasetReduce, DataWithCoords):
+             result = result._unstack_once(dim, fill_value, sparse)
+         return result
+ 
+-    def update(self, other: "CoercibleMapping", inplace: bool = None) -> "Dataset":
++    def update(self, other: Union["DataArray", "CoercibleMapping"], inplace: bool = None) -> "Dataset":
+         """Update this dataset's variables with those from another dataset.
+ 
+         Parameters
+@@ -3547,7 +3547,7 @@ class Dataset(Mapping, ImplementsDatasetReduce, DataWithCoords):
+ 
+     def merge(
+         self,
+-        other: "CoercibleMapping",
++        other: Union["DataArray", "CoercibleMapping"],
+         inplace: bool = None,
+         overwrite_vars: Union[Hashable, Iterable[Hashable]] = frozenset(),
+         compat: str = "no_conflicts",
+diff --git a/xarray/core/merge.py b/xarray/core/merge.py
+index 10c7804d..380ac74b 100644
+--- a/xarray/core/merge.py
++++ b/xarray/core/merge.py
+@@ -797,7 +797,7 @@ def merge(
+ 
+ def dataset_merge_method(
+     dataset: "Dataset",
+-    other: "CoercibleMapping",
++    other: Union["DataArray", "CoercibleMapping"],
+     overwrite_vars: Union[Hashable, Iterable[Hashable]],
+     compat: str,
+     join: str,
+@@ -805,6 +805,8 @@ def dataset_merge_method(
+ ) -> _MergeResult:
+     """Guts of the Dataset.merge method.
+     """
++    from .dataarray import DataArray
++    
+     # we are locked into supporting overwrite_vars for the Dataset.merge
+     # method due for backwards compatibility
+     # TODO: consider deprecating it?
+@@ -814,6 +816,10 @@ def dataset_merge_method(
+     else:
+         overwrite_vars = {overwrite_vars}
+ 
++    # Convert DataArray to Dataset for compatibility with merge_core
++    if isinstance(other, DataArray):
++        other = other.to_dataset()
++
+     if not overwrite_vars:
+         objs = [dataset, other]
+         priority_arg = None
+@@ -837,7 +843,7 @@ def dataset_merge_method(
+ 
+ 
+ def dataset_update_method(
+-    dataset: "Dataset", other: "CoercibleMapping"
++    dataset: "Dataset", other: Union["DataArray", "CoercibleMapping"]
+ ) -> _MergeResult:
+     """Guts of the Dataset.update method.
+ 
+@@ -848,6 +854,10 @@ def dataset_update_method(
+     from .dataarray import DataArray
+     from .dataset import Dataset
+ 
++    # Convert DataArray to Dataset for compatibility
++    if isinstance(other, DataArray):
++        other = other.to_dataset()
++    
+     if not isinstance(other, Dataset):
+         other = dict(other)
+         for key, value in other.items():
