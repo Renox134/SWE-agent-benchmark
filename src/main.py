@@ -5,7 +5,7 @@ import sys
 import os
 from datasets import load_dataset
 from pathlib import Path
-from argparse import ArgumentParser
+from argparse import ArgumentParser, RawTextHelpFormatter
 from typing import Tuple
 import re
 
@@ -28,31 +28,48 @@ model_names = {
     "mistral": 5
 }
 
-dataset_url: str = "SWE-bench/SWE-bench_Verified"
+dataset_dict = {
+    0: "SWE-bench/SWE-bench",
+    1: "SWE-bench/SWE-bench_Lite",
+    2: "SWE-bench/SWE-bench_Verified",
+    3: "SWE-bench/SWE-bench_Multimodal",
+    4: "SWE-bench/SWE-bench_Multimodal",
+    5: "SWE-bench/SWE-bench_Multilingual"
+}
+
+split_dict = {
+    0: "",
+    1: "",
+    2: "test",
+    3: "test",
+    4: "dev",
+    5: "test"
+}
+
+# dataset_url: str = "SWE-bench/SWE-bench_Verified"
 
 def build_arg_parser() -> ArgumentParser:
     """
     Builds and returns the argument parser for the command line tool.
     """
     parser = ArgumentParser(
-        description=(
-            "This is a command line tool that helps launching SWE-agent and SWE-bench"
-        )
+        description="This is a command line tool that helps launching SWE-agent and SWE-bench",
+        formatter_class=RawTextHelpFormatter
     )
 
     # mode argument
     parser.add_argument(
         "-m", "--mode",
         default="agent",
-        help="The mode that specifies which part of the program is launched. Allowed inputs are: "\
-        "'agent', 'bench', 'vis', 'agent_bench', 'agent_vis', 'bench_vis' or 'agent_bench_vis'"
+        help="The mode that specifies which part of the program is launched. Allowed inputs are:\n"\
+        "'agent'\n'bench'\n'vis'\n'agent_bench'\n'agent_vis'\n'bench_vis'\n'agent_bench_vis'"
         )
     # slice argument
     parser.add_argument(
         "-s", "--slice",
         default=(0, 500),
         nargs="+",
-        help="The slice of the instances that will be run. Defaults to (0, 500). "
+        help="The slice of the instances that will be run. Defaults to the entire dataset.\n"
         "Allowed inputs are either two numbers, which would set the range for batch mode "
         "(e.g., --s 0 100) "
         "or one number (e.g., --s 13) for testing one particular instance."
@@ -61,26 +78,35 @@ def build_arg_parser() -> ArgumentParser:
     parser.add_argument(
         "-nw", "--num_workers",
         default=1,
-        help="The number of workers used by SWE-agent and SWE-bench"
+        help="The number of workers used by SWE-agent and SWE-bench. Allowed range is 1-50"
     )
     # agent
     parser.add_argument(
         "-a", "--agent",
         default="qwen3",
-        help="The LLM used by SWE-agent. Allowed inputs are: " \
-        "'gpt', 'claude-sonnet', 'deepseek', 'llama', 'qwen3' and 'mistral'." \
-        "The exact models used are currently:" \
-        "gpt-4o, claude-sonnet-4, deepseek-v3.2, qwen3-coder, " \
-        "llama-3-70b-instruct, mistral-small-3.2-24b-instruct"
+        help="The LLM used by SWE-agent. Allowed inputs are:\n" \
+        "'gpt'\n'claude-sonnet'\n'deepseek'\n'llama'\n'qwen3'\n'mistral'."
+    )
+    # dataset
+    parser.add_argument(
+        "-d", "--dataset",
+        default=2,
+        help="An index that specifies which dataset will be used. The index mapping looks like this:\n" \
+        "0: SWE-bench/SWE-bench\n1: SWE-bench/SWE-bench_Lite\n2: SWE-bench/SWE-bench_Verified (split=test)\n" \
+        "3: SWE-bench/SWE-bench_Multimodal (split=test)\n4: SWE-bench/SWE-bench_Multimodal (split=dev)\n" \
+        "5: SWE-bench/SWE-bench_Multilingual (split=test)"
+
     )
 
     return parser
 
-def validate_args(mode: str, num_workers: int, test_slice: int | Tuple[int], agent_model: str) -> bool:
+def validate_args(mode: str, num_workers: int, test_slice: int | Tuple[int],
+                  agent_model: str, dataset_idx: int) -> bool:
     legal_mode = False
     legal_number_of_workers = False
     legal_test_slice = False
     legal_model = False
+    legal_dataset_idx = False
 
     # check mode
     mode_pattern = r"^(agent)?_?(bench)?_?(vis)?$"
@@ -102,11 +128,17 @@ def validate_args(mode: str, num_workers: int, test_slice: int | Tuple[int], age
         print("Illegal test slice. Must be either one number between 0 and 500 or two numbers " \
         "between 0 and 500 (with the first being smaller than the second)")
 
+    # check model
     legal_model = agent_model in model_names.keys()
     if not legal_model:
         print("Illegal model name. Supported model names are: 'gpt', 'claude-sonnet', 'deepseek', 'llama', 'qwen3', 'mistral'")
 
-    return legal_mode and legal_number_of_workers and legal_test_slice and legal_model
+    # check dataset idx
+    legal_dataset_idx = dataset_idx in list(range(0, 6))
+    if not legal_dataset_idx:
+        print("The provided dataset index isn't supported.")
+
+    return legal_mode and legal_number_of_workers and legal_test_slice and legal_model and legal_dataset_idx
 
 def run_agent_single(agent_model: str, tasks_base: str, pred_dir: str, task_idx: int) -> None:
 
@@ -120,7 +152,7 @@ def run_agent_single(agent_model: str, tasks_base: str, pred_dir: str, task_idx:
                 return patch_path
         return None
 
-    dataset = load_dataset(dataset_url, split="test")
+    dataset = load_dataset("SWE-bench/SWE-bench_Verified", split="test")
 
     task = dataset[task_idx]
 
@@ -163,19 +195,21 @@ def run_agent_single(agent_model: str, tasks_base: str, pred_dir: str, task_idx:
         o.write(json.dumps(patch_dict) + "\n")
 
 def run_agent_batch(agent_model: str, tasks_base: str, num_workers: int,
-                    pred_dir: str, slice: Tuple[int, int]) -> None:
+                    pred_dir: str, slice: Tuple[int, int], subset: str, split: str) -> None:
     # run swe agent
     cmd = [
         "sweagent", "run-batch",
         f"--agent.model.name={agent_model}",
         "--instances.type=swe_bench",
-        f"--instances.subset=verified",
-        "--instances.split=test",
         "--agent.model.per_instance_cost_limit=2.00",
         f"--instances.slice={':'.join(map(str, slice))}",
         f"--output_dir={str(tasks_base)}",
         f"--num_workers={num_workers}"
     ]
+    if subset != "":
+        cmd.append(f"--instances.subset={subset}")
+    if split != "":
+        cmd.append(f"--instances.split={split}")
     subprocess.run(cmd)
 
     with open(str(tasks_base) + "/preds.json", "r", newline="\n") as f, open(pred_dir, "a", newline="\n") as o:
@@ -187,7 +221,7 @@ def run_agent_batch(agent_model: str, tasks_base: str, num_workers: int,
                                     "instance_id": value["instance_id"],
                                     "model_patch": value["model_patch"]}) + "\n")
 
-def run_bench(agent_model: str, tasks_base: str, num_workers: int, pred_dir: str) -> None:
+def run_bench(agent_model: str, tasks_base: str, num_workers: int, pred_dir: str, dataset_url: str) -> None:
     # verify with swebench
     cmd = [
         sys.executable, "-m", "swebench.harness.run_evaluation",
@@ -207,15 +241,6 @@ def run_bench(agent_model: str, tasks_base: str, num_workers: int, pred_dir: str
 
     shutil.move(str(result_file), str(tasks_base))
 
-def generate_controll_preds(agent_model: str, pred_dir: str) -> None:
-    dataset = load_dataset(dataset_url, split="test")
-
-    with open(pred_dir, "w", newline="\n") as o:
-        for idx in range(*slice):
-            o.write(json.dumps({"model_name_or_path": agent_model.replace('/', '_'),
-                                "instance_id": dataset[idx]["instance_id"],
-                                "model_patch": dataset[idx]["patch"]}) + "\n")
-
 def main() -> None:
     parser = build_arg_parser()
     args = parser.parse_args()
@@ -224,10 +249,14 @@ def main() -> None:
     num_workers: int = int(args.num_workers)
     test_slice: int | Tuple[int, int] = int(args.slice[0]) if len(args.slice) == 1 else (int(args.slice[0]), int(args.slice[1]))
     agent_model: str = str(args.agent)
+    dataset_idx: int = int(args.dataset)
 
     # check the provided arguments
-    if not validate_args(mode, num_workers, test_slice, agent_model):
+    if not validate_args(mode, num_workers, test_slice, agent_model, dataset_idx):
         return
+    dataset_url: str = dataset_dict[dataset_idx]
+    dataset_subset: str = dataset_url.split("_")[1].lower()
+    split: str = split_dict[dataset_idx]
     agent_model = model_keys[model_names[agent_model]]
 
     tasks_base = Path(f"tasks/{agent_model.replace('/', '_')}")
@@ -238,10 +267,11 @@ def main() -> None:
         if isinstance(test_slice, int):
             run_agent_single(agent_model, tasks_base, pred_dir, test_slice)
         elif isinstance(test_slice, tuple):
-            run_agent_batch(agent_model, tasks_base, num_workers, pred_dir, test_slice)
+            run_agent_batch(agent_model, tasks_base, num_workers,
+                            pred_dir, test_slice, dataset_subset, split)
 
     if "bench" in mode:
-        run_bench(agent_model, tasks_base, num_workers, pred_dir)
+        run_bench(agent_model, tasks_base, num_workers, pred_dir, dataset_url)
 
     if "vis" in mode:
         Visualizer().visualize()
