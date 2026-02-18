@@ -2,8 +2,6 @@ import subprocess
 import shutil
 import json
 import sys
-import os
-from datasets import load_dataset
 from pathlib import Path
 from argparse import ArgumentParser, RawTextHelpFormatter
 from typing import Tuple
@@ -140,60 +138,6 @@ def validate_args(mode: str, num_workers: int, test_slice: int | Tuple[int],
 
     return legal_mode and legal_number_of_workers and legal_test_slice and legal_model and legal_dataset_idx
 
-def run_agent_single(agent_model: str, tasks_base: str, pred_dir: str, task_idx: int) -> None:
-
-    def __has_patch(task_folder) -> str | None:
-        folders = os.listdir(str(task_folder))
-        if len(folders) > 0:
-            skip = os.listdir(str(task_folder))[0]
-            patch_path = str(task_folder) + f"/{skip}/{skip}.patch"
-
-            if os.path.exists(patch_path):
-                return patch_path
-        return None
-
-    dataset = load_dataset("SWE-bench/SWE-bench_Verified", split="test")
-
-    task = dataset[task_idx]
-
-    instance_id = task["instance_id"]
-    repo = f"https://github.com/{task['repo']}"
-    problem_text = task["problem_statement"]
-
-    task_folder = tasks_base / str(instance_id)
-    task_folder.mkdir(exist_ok=True)
-
-    # check if task is already solved
-    patch_path = __has_patch(task_folder)
-    if patch_path is None:
-        # run swe agent
-        cmd = [
-            "sweagent", "run",
-            f"--agent.model.name={agent_model}",
-            "--agent.model.per_instance_cost_limit=2.00",
-            f"--env.repo.github_url={repo}",
-            f"--problem_statement.text={problem_text}",
-            f"--output_dir={str(task_folder)}"
-        ]
-        subprocess.run(cmd)
-
-    # modify patch for swebench
-    patch_path = __has_patch(task_folder)
-    if patch_path is not None:
-        with open(patch_path, "r", newline="\n") as f:
-            patch_content = f.read()
-
-            patch_dict = {
-                "instance_id": instance_id,
-                "model_name_or_path": agent_model.replace('/', '_'),
-                "model_patch": patch_content
-            }
-
-
-    # dump patches into a jsonl file
-    with open(pred_dir, "w", newline="\n") as o:
-        o.write(json.dumps(patch_dict) + "\n")
-
 def run_agent_batch(agent_model: str, tasks_base: str, num_workers: int,
                     pred_dir: str, slice: Tuple[int, int], subset: str, split: str) -> None:
     # run swe agent
@@ -212,6 +156,7 @@ def run_agent_batch(agent_model: str, tasks_base: str, num_workers: int,
         cmd.append(f"--instances.split={split}")
     subprocess.run(cmd)
 
+    # collect patches into one file
     with open(str(tasks_base) + "/preds.json", "r", newline="\n") as f, open(pred_dir, "a", newline="\n") as o:
         preds = json.load(f)
 
@@ -265,7 +210,8 @@ def main() -> None:
 
     if "agent" in mode:
         if isinstance(test_slice, int):
-            run_agent_single(agent_model, tasks_base, pred_dir, test_slice)
+            run_agent_batch(agent_model, tasks_base, num_workers, pred_dir,
+                            (test_slice, test_slice + 1), dataset_subset, split)
         elif isinstance(test_slice, tuple):
             run_agent_batch(agent_model, tasks_base, num_workers,
                             pred_dir, test_slice, dataset_subset, split)
