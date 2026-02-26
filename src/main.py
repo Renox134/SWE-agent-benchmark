@@ -96,15 +96,24 @@ def build_arg_parser() -> ArgumentParser:
 
     )
 
+    # per instance cost limit
+    parser.add_argument(
+        "-l", "--instance_cost_limit",
+        default=2.00,
+        help="The limit (in US dollar) of how much money the agent can burn before the problem solution" \
+        " process is aborted."
+    )
+
     return parser
 
 def validate_args(mode: str, num_workers: int, test_slice: int | Tuple[int],
-                  agent_model: str, dataset_idx: int) -> bool:
+                  agent_model: str, dataset_idx: int, instance_cost_limit: float) -> bool:
     legal_mode = False
     legal_number_of_workers = False
     legal_test_slice = False
     legal_model = False
     legal_dataset_idx = False
+    legal_instance_cost_limit = False
 
     # check mode
     mode_pattern = r"^(agent)?_?(bench)?_?(vis)?$"
@@ -136,16 +145,22 @@ def validate_args(mode: str, num_workers: int, test_slice: int | Tuple[int],
     if not legal_dataset_idx:
         print("The provided dataset index isn't supported.")
 
-    return legal_mode and legal_number_of_workers and legal_test_slice and legal_model and legal_dataset_idx
+    # check cost limit
+    legal_instance_cost_limit = instance_cost_limit > 0.0
+    if not legal_instance_cost_limit:
+        print("The instance cost limit cannot be negative.")
+
+    return legal_mode and legal_number_of_workers and legal_test_slice and legal_model and legal_dataset_idx and legal_instance_cost_limit
 
 def run_agent_batch(agent_model: str, tasks_base: str, num_workers: int,
-                    pred_dir: str, slice: Tuple[int, int], subset: str, split: str) -> None:
+                    pred_dir: str, instance_cost_limit: float,
+                    slice: Tuple[int, int], subset: str, split: str) -> None:
     # run swe agent
     cmd = [
         "sweagent", "run-batch",
         f"--agent.model.name={agent_model}",
         "--instances.type=swe_bench",
-        "--agent.model.per_instance_cost_limit=2.00",
+        f"--agent.model.per_instance_cost_limit={instance_cost_limit}",
         f"--instances.slice={':'.join(map(str, slice))}",
         f"--output_dir={str(tasks_base)}",
         f"--num_workers={num_workers}"
@@ -195,9 +210,10 @@ def main() -> None:
     test_slice: int | Tuple[int, int] = int(args.slice[0]) if len(args.slice) == 1 else (int(args.slice[0]), int(args.slice[1]))
     agent_model: str = str(args.agent)
     dataset_idx: int = int(args.dataset)
+    cost_limit: float = float(args.instance_cost_limit)
 
     # check the provided arguments
-    if not validate_args(mode, num_workers, test_slice, agent_model, dataset_idx):
+    if not validate_args(mode, num_workers, test_slice, agent_model, dataset_idx, cost_limit):
         return
     dataset_url: str = dataset_dict[dataset_idx]
     dataset_subset: str = dataset_url.split("_")[1].lower()
@@ -210,11 +226,11 @@ def main() -> None:
 
     if "agent" in mode:
         if isinstance(test_slice, int):
-            run_agent_batch(agent_model, tasks_base, num_workers, pred_dir,
+            run_agent_batch(agent_model, tasks_base, num_workers, pred_dir, cost_limit,
                             (test_slice, test_slice + 1), dataset_subset, split)
         elif isinstance(test_slice, tuple):
             run_agent_batch(agent_model, tasks_base, num_workers,
-                            pred_dir, test_slice, dataset_subset, split)
+                            pred_dir, cost_limit, test_slice, dataset_subset, split)
 
     if "bench" in mode:
         run_bench(agent_model, tasks_base, num_workers, pred_dir, dataset_url)
