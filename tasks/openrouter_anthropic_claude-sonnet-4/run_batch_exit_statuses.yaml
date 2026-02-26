@@ -1,4 +1,4 @@
 instances_by_exit_status:
-    Uncaught UnicodeEncodeError:
-    - pytest-dev__pytest-6197
-total_cost: 15.184584000000001
+    submitted (exit_format):
+    - pytest-dev__pytest-7571
+total_cost: 2.9076779999999998

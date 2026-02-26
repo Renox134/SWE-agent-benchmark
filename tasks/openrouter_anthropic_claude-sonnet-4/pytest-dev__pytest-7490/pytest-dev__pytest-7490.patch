@@ -1,0 +1,203 @@
+diff --git a/src/_pytest/skipping.py b/src/_pytest/skipping.py
+index 335e10996..e55d2d248 100644
+--- a/src/_pytest/skipping.py
++++ b/src/_pytest/skipping.py
+@@ -262,6 +262,11 @@ def pytest_runtest_makereport(item: Item, call: CallInfo[None]):
+     outcome = yield
+     rep = outcome.get_result()
+     xfailed = item._store.get(xfailed_key, None)
++    # Re-evaluate xfail marks in case they were added dynamically during the call phase
++    if call.when == "call" and not item.config.option.runxfail:
++        xfailed = evaluate_xfail_marks(item)
++        if xfailed:
++            item._store[xfailed_key] = xfailed
+     # unittest special case, see setting of unexpectedsuccess_key
+     if unexpectedsuccess_key in item._store and rep.when == "call":
+         reason = item._store[unexpectedsuccess_key]
+diff --git a/temp_test.py b/temp_test.py
+new file mode 100644
+index 000000000..a18a7de4b
+--- /dev/null
++++ b/temp_test.py
+@@ -0,0 +1,32 @@
++
++def test_dynamic_xfail_with_failure(request):
++    mark = pytest.mark.xfail(reason="dynamically added xfail")
++    request.node.add_marker(mark)
++    assert 0
++
++def test_dynamic_xfail_with_success(request):
++    mark = pytest.mark.xfail(reason="dynamically added xfail")
++    request.node.add_marker(mark)
++    assert 1
++
++def test_dynamic_xfail_strict_with_success(request):
++    mark = pytest.mark.xfail(reason="dynamically added strict xfail", strict=True)
++    request.node.add_marker(mark)
++    assert 1
++
++def test_dynamic_xfail_with_specific_exception(request):
++    mark = pytest.mark.xfail(reason="expecting ValueError", raises=ValueError)
++    request.node.add_marker(mark)
++    raise ValueError("expected error")
++
++def test_dynamic_xfail_with_wrong_exception(request):
++    mark = pytest.mark.xfail(reason="expecting ValueError", raises=ValueError)
++    request.node.add_marker(mark)
++    raise TypeError("unexpected error")
++
++def test_multiple_dynamic_xfail_markers(request):
++    mark1 = pytest.mark.xfail(False, reason="first marker - should not trigger")
++    mark2 = pytest.mark.xfail(True, reason="second marker - should trigger")
++    request.node.add_marker(mark1)
++    request.node.add_marker(mark2)
++    assert 0
+diff --git a/test_comprehensive_dynamic_xfail.py b/test_comprehensive_dynamic_xfail.py
+new file mode 100644
+index 000000000..0f8e74cde
+--- /dev/null
++++ b/test_comprehensive_dynamic_xfail.py
+@@ -0,0 +1,53 @@
++#!/usr/bin/env python3
++"""Comprehensive test for dynamic xfail marker addition."""
++
++import pytest
++
++
++def test_dynamic_xfail_with_failure(request):
++    """Test that dynamically adding xfail marker during test execution works with failure."""
++    mark = pytest.mark.xfail(reason="dynamically added xfail")
++    request.node.add_marker(mark)
++    assert 0  # This should be treated as xfailed
++
++
++def test_dynamic_xfail_with_success(request):
++    """Test that dynamically adding xfail marker during test execution works with success (xpass)."""
++    mark = pytest.mark.xfail(reason="dynamically added xfail")
++    request.node.add_marker(mark)
++    assert 1  # This should be treated as xpassed
++
++
++def test_dynamic_xfail_strict_with_success(request):
++    """Test that dynamically adding strict xfail marker during test execution works with success."""
++    mark = pytest.mark.xfail(reason="dynamically added strict xfail", strict=True)
++    request.node.add_marker(mark)
++    assert 1  # This should be treated as failed due to strict mode
++
++
++def test_dynamic_xfail_with_specific_exception(request):
++    """Test that dynamically adding xfail marker with specific exception works."""
++    mark = pytest.mark.xfail(reason="expecting ValueError", raises=ValueError)
++    request.node.add_marker(mark)
++    raise ValueError("expected error")  # This should be treated as xfailed
++
++
++def test_dynamic_xfail_with_wrong_exception(request):
++    """Test that dynamically adding xfail marker with specific exception but wrong exception fails."""
++    mark = pytest.mark.xfail(reason="expecting ValueError", raises=ValueError)
++    request.node.add_marker(mark)
++    raise TypeError("unexpected error")  # This should be treated as failed
++
++
++def test_multiple_dynamic_xfail_markers(request):
++    """Test that multiple dynamically added xfail markers work."""
++    mark1 = pytest.mark.xfail(False, reason="first marker - should not trigger")
++    mark2 = pytest.mark.xfail(True, reason="second marker - should trigger")
++    request.node.add_marker(mark1)
++    request.node.add_marker(mark2)
++    assert 0  # This should be treated as xfailed with second marker's reason
++
++
++if __name__ == "__main__":
++    # Run the tests to see the behavior
++    pytest.main(["-rsx", __file__])
+\ No newline at end of file
+diff --git a/test_dynamic_xfail.py b/test_dynamic_xfail.py
+new file mode 100644
+index 000000000..0abbe2d89
+--- /dev/null
++++ b/test_dynamic_xfail.py
+@@ -0,0 +1,29 @@
++#!/usr/bin/env python3
++"""Test for dynamic xfail marker addition."""
++
++import pytest
++
++
++def test_dynamic_xfail_in_call_phase(request):
++    """Test that dynamically adding xfail marker during test execution works."""
++    mark = pytest.mark.xfail(reason="dynamically added xfail")
++    request.node.add_marker(mark)
++    assert 0  # This should be treated as xfailed, not failed
++
++
++def test_dynamic_xfail_in_setup_phase(request):
++    """Test that dynamically adding xfail marker during setup works (this should already work)."""
++    # This is added during setup phase, which should work
++    pass
++
++
++def pytest_runtest_setup(item):
++    """Add xfail marker during setup phase for the second test."""
++    if item.name == "test_dynamic_xfail_in_setup_phase":
++        mark = pytest.mark.xfail(reason="added during setup")
++        item.add_marker(mark)
++
++
++if __name__ == "__main__":
++    # Run the tests to see the current behavior
++    pytest.main(["-rsx", __file__])
+\ No newline at end of file
+diff --git a/test_reproduce_issue.py b/test_reproduce_issue.py
+new file mode 100644
+index 000000000..de4c4fffa
+--- /dev/null
++++ b/test_reproduce_issue.py
+@@ -0,0 +1,15 @@
++#!/usr/bin/env python3
++"""Script to reproduce the xfail marker issue."""
++
++import pytest
++
++
++def test_xfail_test(request):
++    mark = pytest.mark.xfail(reason="xfail")
++    request.node.add_marker(mark)
++    assert 0
++
++
++if __name__ == "__main__":
++    # Run the test to see the current behavior
++    pytest.main(["-rsx", __file__])
+\ No newline at end of file
+diff --git a/testing/test_skipping.py b/testing/test_skipping.py
+index 8fceb37aa..aff1051b4 100644
+--- a/testing/test_skipping.py
++++ b/testing/test_skipping.py
+@@ -1230,3 +1230,26 @@ def test_relpath_rootdir(testdir):
+     result.stdout.fnmatch_lines(
+         ["SKIPPED [[]1[]] tests/test_1.py:2: unconditional skip"]
+     )
++
++
++def test_dynamic_xfail_marker_during_call_phase(testdir):
++    """Test that dynamically adding xfail marker during test execution works."""
++    testdir.makepyfile(
++        """
++        import pytest
++        
++        def test_dynamic_xfail_with_failure(request):
++            mark = pytest.mark.xfail(reason="dynamically added xfail")
++            request.node.add_marker(mark)
++            assert 0  # This should be treated as xfailed
++    """
++    )
++    result = testdir.runpytest("-rsx", "-o", "xfail_strict=false")
++    result.stdout.fnmatch_lines(
++        [
++            "*x*",  # x=xfailed
++            "*XFAIL*test_dynamic_xfail_with_failure*",
++            "*dynamically added xfail*",
++            "*1 xfailed*",
++        ]
++    )
