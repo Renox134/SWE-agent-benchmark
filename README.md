@@ -59,7 +59,7 @@ The scripts automatically:
 - install the project dependencies into the virtual environment 
  
 ## 3. Adding the API key
-To run SWE-agent properly, you have to **add your OpenRouter API key** to the agent. To do that, the key can either be exported into an evironment variable or entered into a **.env** file at the root of the agent directory. If using the file, the following lines should do the trick:
+To run SWE-agent properly, you have to **add your API key** to the agent. To do that, the key can either be exported into an evironment variable or entered into a **.env** file at the root of the agent directory. **If** using the file and **openrouter**, the following lines should do the trick:
 ```bash
 OPENROUTER_API_KEY=<your-key>
 LITELLM_API_BASE=https://openrouter.ai/api/v1
@@ -155,31 +155,77 @@ Select LLM alias.
 Default:
 
 ```
-qwen3
+openrouter/qwen/qwen3-coder
 ```
 
 Example:
 
 ```bash
--a gpt
+-a openrouter/openai/gpt-4o
+```
+
+---
+
+### `--dataset` / `-d`
+
+Select one of the 5 possible datasets for running SWE-agent and SWE-bench against by indice. The index map looks like this:
+
+| Index             | Dataset                                         |
+| ----------------- | -------------------------                       |
+| `0`               | SWE-bench/SWE-bench                             |
+| `1`               | SWE-bench/SWE-bench_Lite                        |
+| `2`               | SWE-bench/SWE-bench_Verified (split=test)       |
+| `3`               | SWE-bench/SWE-bench_Multimodal (split=test)     |
+| `4`               | SWE-bench/SWE-bench_Multimodal (split=dev)      |
+| `5`               | SWE-bench/SWE-bench_Multilingual (split=test)   |
+
+
+Default:
+
+```
+2
+```
+
+Example:
+
+```bash
+-d 1
+```
+
+---
+
+### `--instance_cost_limit` / `-l`
+
+The limit (in US dollar) of how much money the agent can burn before the problem solution process is aborted.
+
+Default:
+
+```
+2.00
+```
+
+Example:
+
+```bash
+-l 15.00
 ```
 
 ---
 
 # Example Workflows
 
-## Run full benchmark on first 50 tasks with GPT‑4o and 8 workers
+## Run full benchmark on first 50 tasks of SWE-bench verified with GPT‑4o, an instance cost limit of 10 USD and 8 workers
 
 ```bash
-python src/main.py -m agent_bench_vis -s 0 50 -a gpt -nw 8
+python src/main.py -m agent_bench_vis -s 0 50 -a openrouter/openai/gpt-4o -nw 8 -l 10.00 -d 2
 ```
 
 ---
 
-## Run SWE-agent on a single SWE-bench test instance
+## Only run SWE-agent on a single SWE-bench verified test instance (with standard instance cost limit)
 
 ```bash
-python src/main.py -m agent -s 13 -a qwen3
+python src/main.py -m agent -s 13 -a openrouter/qwen/qwen3-coder
 ```
 
 ---
@@ -227,8 +273,6 @@ We had trouble getting SWE-bench to work on Windows, so running the bench on a u
 # Limitations / TODO
 
 * Visualization is not yet customizable
-* Hard‑coded model list
-* Fixed dataset target (Verified split only)
 * Minimal error handling for subprocess failures
 
 ---
@@ -243,6 +287,3 @@ MIT License
 
 * **SWE-agent**
 * **SWE-bench**
-* **OpenRouter**
-
-For enabling reproducible evaluation of LLM software engineering ability.
