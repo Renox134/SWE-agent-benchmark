@@ -3,7 +3,7 @@
 The shortened version of the verbose flag when using pylint incorrectly expected an argument, while the explicit flag worked.
 Example:   
 ```
-pylint mytest.py -verbose // -> works just fine, as intended
+pylint mytest.py --verbose // -> works just fine, as intended
 ```
 ```
 pylint mytest.py -v // -> pylint: error: argument --verbose/-v: expected one argument
