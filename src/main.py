@@ -10,22 +10,6 @@ import re
 from visualizer import Visualizer
 
 
-model_keys = ["openrouter/openai/gpt-4o",
-              "openrouter/anthropic/claude-sonnet-4",
-              "openrouter/deepseek/deepseek-v3.2",
-              "openrouter/qwen/qwen3-coder",
-              "openrouter/meta-llama/llama-3-70b-instruct",
-              "openrouter/mistralai/mistral-small-3.2-24b-instruct"]
-
-model_names = {
-    "gpt": 0,
-    "claude-sonnet": 1,
-    "deepseek": 2,
-    "qwen3": 3,
-    "llama": 4,
-    "mistral": 5
-}
-
 dataset_dict = {
     0: "SWE-bench/SWE-bench",
     1: "SWE-bench/SWE-bench_Lite",
@@ -111,7 +95,6 @@ def validate_args(mode: str, num_workers: int, test_slice: int | Tuple[int],
     legal_mode = False
     legal_number_of_workers = False
     legal_test_slice = False
-    legal_model = False
     legal_dataset_idx = False
     legal_instance_cost_limit = False
 
@@ -135,11 +118,6 @@ def validate_args(mode: str, num_workers: int, test_slice: int | Tuple[int],
         print("Illegal test slice. Must be either one number between 0 and 500 or two numbers " \
         "between 0 and 500 (with the first being smaller than the second)")
 
-    # check model
-    legal_model = agent_model in model_names.keys()
-    if not legal_model:
-        print("Illegal model name. Supported model names are: 'gpt', 'claude-sonnet', 'deepseek', 'llama', 'qwen3', 'mistral'")
-
     # check dataset idx
     legal_dataset_idx = dataset_idx in list(range(0, 6))
     if not legal_dataset_idx:
@@ -150,7 +128,7 @@ def validate_args(mode: str, num_workers: int, test_slice: int | Tuple[int],
     if not legal_instance_cost_limit:
         print("The instance cost limit cannot be negative.")
 
-    return legal_mode and legal_number_of_workers and legal_test_slice and legal_model and legal_dataset_idx and legal_instance_cost_limit
+    return legal_mode and legal_number_of_workers and legal_test_slice and legal_dataset_idx and legal_instance_cost_limit
 
 def run_agent_batch(agent_model: str, tasks_base: str, num_workers: int,
                     pred_dir: str, instance_cost_limit: float,
@@ -218,7 +196,6 @@ def main() -> None:
     dataset_url: str = dataset_dict[dataset_idx]
     dataset_subset: str = dataset_url.split("_")[1].lower()
     split: str = split_dict[dataset_idx]
-    agent_model = model_keys[model_names[agent_model]]
 
     tasks_base = Path(f"tasks/{agent_model.replace('/', '_')}")
     tasks_base.mkdir(parents=True, exist_ok=True)
