@@ -1,15 +1,3 @@
----
-# yaml-language-server: $schema=schemas\page.schema.json
-Object type:
-    - Page
-Backlinks:
-    - Reports
-    - Failure Checklist With Sonnet
-Creation date: "2026-03-02T09:53:16Z"
-Created by:
-    - Philip
-id: bafyreihnxiypryavlub7yesjqhkxktiyg33qihddxdzs6zxkqqxbwax3hy
----
 # pydata\_\_xarray-6992   
 ## Issue to solve (rough breakdown)   
 There was an index refactor in xarray that caused some problems. In particular, 'xr.core.dataset.DataVariables\` assumed that everything that is in `ds.\_dataset.\_variables`  and not in `self.\_dataset.\_coord\_names`  is a "data variable". However, due to the prior refactor, this is was no longer true and produced multiple issues that needed to be fixed.   

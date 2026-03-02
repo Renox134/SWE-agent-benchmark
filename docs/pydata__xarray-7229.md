@@ -1,15 +1,3 @@
----
-# yaml-language-server: $schema=schemas\page.schema.json
-Object type:
-    - Page
-Backlinks:
-    - Reports
-    - Failure Checklist With Sonnet
-Creation date: "2026-03-02T10:34:34Z"
-Created by:
-    - Philip
-id: bafyreifsa7r7uocfrmfslr26gc7jecowoildacucdaj7tlrewyiobagy3q
----
 # pydata\_\_xarray-7229   
 ## Issue to solve (rough breakdown)   
 A past commit to xarray made it such that coordinate attributes could be overwritten by variable attributes, while the should be preserved.   

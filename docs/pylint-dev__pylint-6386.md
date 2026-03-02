@@ -1,15 +1,3 @@
----
-# yaml-language-server: $schema=schemas\page.schema.json
-Object type:
-    - Page
-Backlinks:
-    - Reports
-    - Failure Checklist With Sonnet
-Creation date: "2026-03-02T10:50:48Z"
-Created by:
-    - Philip
-id: bafyreidi377ymkg32yaq4c7y5omg4pbxhf3bc3mc3hou5armdxmlc4xd7a
----
 # pylint-dev\_\_pylint-6386   
 ## Issue to solve (rough breakdown)   
 The shortened version of the verbose flag when using pylint incorrectly expected an argument, while the explicit flag worked.

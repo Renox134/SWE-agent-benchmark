@@ -1,15 +1,3 @@
----
-# yaml-language-server: $schema=schemas\page.schema.json
-Object type:
-    - Page
-Backlinks:
-    - Reports
-    - Failure Checklist With Sonnet
-Creation date: "2026-03-02T09:51:09Z"
-Created by:
-    - Philip
-id: bafyreibh7rbb5spo3z5fidayi3wha7lqnild2katvrhdzhhba7zrtibfsu
----
 # mwaskom\_\_seaborn-3187   
 ## Issue to solve (rough breakdown)   
 In the legend of a plot, some numbers were inaccurately not scaled with a multiplicator (i.e., it said 3 instead of 3000, 4 instead of 4000 and so on).   

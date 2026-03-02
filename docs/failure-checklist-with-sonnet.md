@@ -1,27 +1,8 @@
----
-# yaml-language-server: $schema=schemas\page.schema.json
-Object type:
-    - Page
-Creation date: "2026-02-26T16:23:39Z"
-Created by:
-    - Philip
-Links:
-    - mwaskom__seaborn-3187
-    - psf__requests-6028
-    - pydata__xarray-6992
-    - pydata__xarray-7229
-    - pylint-dev__pylint-6386
-    - pylint-dev__pylint-7080
-    - pylint-dev__pylint-8898
-    - pytest-dev__pytest-10356
-    - pytest-dev__pytest-5840
-    - pytest-dev__pytest-6197
-id: bafyreig7rji2z2jm6y2mx3omrxhis6dtzpncs6ljtxfkabachzlpqzd5qi
----
-# Failure Checklist With Sonnet   
-   
-blue = all had the same tests that failed    
-yellow = differences in the failing tests   
+# Testing Example
+For research purposes, we tested our pipeline with 67 tasks (all tasks from "matplotlib__matplotlib-26291" to "scikit-learn__scikit-learn-10844"), which we selected in the middle of the SWE-bench verified dataset to cover a wide variety of different tasks. After we ran everything, we then decided to have a closer look at all tasks where qwen3-coder, Deepseek and Claude-Sonnet4 failed (we excluded tasks where the pipeline itself failed, i.e., where no patch was produced due to things like architectural issues of a package). There were ten tasks in total for which this was the case. For each of these tasks, we manually looked through the provided description in the dataset and also analyzed the test failures in the logs provided by the SWE-bench evaluation.
+
+The table below, as well as the linked documents document our results from this manual checks.
+# Failure Checklist
    
 |                                                      Task |         Model | Environment Failure | Test Failure | Pass to Pass | Fail to Pass | Pass to Fail | Fail to Fail |
 |:----------------------------------------------------------|:--------------|:--------------------|:-------------|:-------------|:-------------|:-------------|:-------------|
