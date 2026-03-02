@@ -17,7 +17,7 @@ if %errorlevel% neq 0 (
 echo [OK] SWE-agent submodule initialized.
 echo.
 
-:: --- Step 4: Create venv and install dependencies ---
+:: --- Step 2: Create venv and install dependencies ---
 echo [1/2] Create venv and install dependencies...
 echo.
 python -m venv venv
