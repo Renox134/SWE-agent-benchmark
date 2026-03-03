@@ -38,4 +38,19 @@ The table below, as well as the linked documents document our results from this 
 |                                                           | claude-sonnet |                   0 |            3 |            3 |            0 |            0 |            0 |
 
 # Findings
-Within the 67 samples that we tested, the difficulty distribution looked like this
+## Difficulty correlations
+Within the 67 samples that we tested, the difficulty distribution looked like this:
+
+![plot1](./images/plot1.png)
+
+Among the 10 tasks where all LLMs failed, the distribution looked like this:
+![plot2](./images/plot2.png)
+
+As can be seen, there is a considerable overrepresentation of difficult tasks among those that failed. Hence, we can identify a correlation between difficult tasks and LLMs failing. On the other hand, we can also observe that among the third of tasks that were deemed easy to fix (< 15 min fix), the LLMs solved everything correctly and of the 15 min to 1 hour tasks, it still solved the vast majority of them correctly.
+
+To us, this indicates that LLMs seem to perform really good at easy tasks, relatively good at slightly more difficult tasks, and tend to performe bad on harder tasks.
+
+## The challenges for LLMs
+The first challenge for any LLM when tasked with producing a patch is to understand the underlying issue and what is expected. Within our 10 failing tasks, there was at least one instance where a flawed understanding of the task description seemed to be the root cause of the failure, namely in pylint-dev__pylint-8898. In this task, the LLM was supposed to fix a regex issue, where the presence of a comma produced an error. The LLMs tried to fix this by splitting the regex at the comma, which did remove the comma, but caused the regex to be cut off early, producing another error. In a way, the LLM did remove the comma, only the way it removed it wasn't suited for the context of the task.
+
+Apart from issues with the task description, the most common issue seemed to be coding error within the patch of the LLMs. Whether these issues are actually still a result of a poor task understanding or bad training is hard to tell and more research is likely required.
