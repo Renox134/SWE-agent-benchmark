@@ -178,65 +178,6 @@ def run_bench(agent_model: str, tasks_base: str, num_workers: int, pred_dir: str
     shutil.move(str(result_file), str(tasks_base))
 
 def main() -> None:
-    from datasets import load_dataset
-    import plotly.graph_objects as go
-
-    difficulties = {
-
-    }
-
-    raw_dataset = load_dataset("SWE-bench/SWE-bench_Verified", split="test")
-
-    for i, task in enumerate(raw_dataset):
-        if i < 284:
-            continue
-        if i >= 351:
-            break
-        if task["difficulty"] not in difficulties:
-            difficulties[task["difficulty"]] = 1
-        else:
-            difficulties[task["difficulty"]] += 1
-
-    print(difficulties)
-    # Data
-    data = {
-        '15 min - 1 hour': 6,
-        '<15 min fix': 0,
-        '1-4 hours': 3,
-        '>4 hours': 1
-    }
-
-    COLOR_MAP = {
-        '15 min - 1 hour': '#1f77b4',
-        '<15 min fix': '#ff7f0e',
-        '1-4 hours': '#2ca02c',
-        '>4 hours': '#d62728'
-    }
-
-    labels = list(difficulties.keys())
-    # Create pie chart
-    fig = go.Figure(
-        data=[
-            go.Pie(
-                labels=labels,
-                values=list(difficulties.values()),
-                textinfo='label+percent',
-                hoverinfo='label+value+percent',
-                marker=dict(
-                colors=[COLOR_MAP[label] for label in labels]
-                ),
-            )
-        ]
-    )
-
-    fig.update_layout(
-        title="Difficulty (estimated time to fix) for our test slice."
-    )
-
-    fig.show()
-
-    return
-
     parser = build_arg_parser()
     args = parser.parse_args()
 
