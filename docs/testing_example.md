@@ -37,5 +37,5 @@ The table below, as well as the linked documents document our results from this 
 |                                                           |      deepseek |                   0 |            2 |            0 |            2 |            0 |            0 |
 |                                                           | claude-sonnet |                   0 |            3 |            3 |            0 |            0 |            0 |
 
-   
-   
+# Findings
+Within the 67 samples that we tested, the difficulty distribution looked like this
